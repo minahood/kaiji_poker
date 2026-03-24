@@ -16,27 +16,32 @@ h1{font-size:2.2rem;text-align:center;padding:16px;color:#ffd700;text-shadow:2px
 .pc-btn:hover{background:#4a9a4a;transform:translateY(-2px)}
 
 /* BOARD */
-#game-board{display:none;width:100%;max-width:1100px;padding:8px;flex-direction:column;gap:8px}
+#game-board{display:none;width:100%;max-width:1100px;padding:8px;flex-direction:column;gap:6px}
+#top-zone{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;min-height:10px;padding:4px 4px 0}
+#middle-zone{display:flex;align-items:stretch;gap:8px}
+#left-zone{display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;flex-shrink:0;min-width:120px}
+#center-zone{flex:1;background:rgba(0,0,0,.3);border-radius:10px;padding:14px;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:6px}
+#right-zone{display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;flex-shrink:0;min-width:120px}
+#player-zone{display:flex;justify-content:center;padding:0 4px}
+#player-area{background:rgba(0,0,0,.3);border:2px solid #2a5a8a;border-radius:10px;padding:12px;width:100%}
+#player-area h3{font-size:.9rem;color:#aaa;margin-bottom:8px;text-align:center}
+#player-hand{display:flex;flex-direction:column;gap:6px;align-items:center}
+#player-sum{text-align:center;margin-top:6px;font-size:.8rem;color:#ffd700}
 
 /* OPPONENTS */
-#opponents-area{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;padding:6px}
-.opp-box{background:rgba(0,0,0,.3);border:2px solid #4a9a4a;border-radius:10px;padding:10px;min-width:180px}
+.opp-box{background:rgba(0,0,0,.3);border:2px solid #4a9a4a;border-radius:10px;padding:8px;text-align:center}
 .opp-box.active{border-color:#ffd700;box-shadow:0 0 14px rgba(255,215,0,.5)}
-.opp-name{font-size:.85rem;color:#aaa;margin-bottom:4px}
-.opp-sum{font-size:.75rem;color:#ffd700;margin-bottom:6px}
-.hand-row{display:flex;gap:4px;justify-content:center}
+.opp-name{font-size:.8rem;color:#aaa;margin-bottom:2px}
+.opp-sum{font-size:.7rem;color:#ffd700;margin-bottom:4px}
 
-/* CENTER */
-#center-area{background:rgba(0,0,0,.3);border-radius:10px;padding:12px;text-align:center}
-#msg{font-size:1.05rem;min-height:28px;margin-bottom:6px}
-#turn-info{font-size:.85rem;color:#aaa}
-#deck-info{font-size:.8rem;color:#aaa;margin-top:4px}
-
-/* PLAYER */
-#player-area{background:rgba(0,0,0,.3);border:2px solid #2a5a8a;border-radius:10px;padding:12px}
-#player-area h3{font-size:.9rem;color:#aaa;margin-bottom:8px;text-align:center}
-#player-hand{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-#player-sum{text-align:center;margin-top:6px;font-size:.8rem;color:#ffd700}
+/* CARD ROWS */
+.hand-row{display:flex;gap:4px;justify-content:center;align-items:flex-end;min-height:20px}
+.hand-row.rev-row{border-top:1px dashed rgba(255,68,68,.35);padding-top:4px}
+.rev-label{font-size:.6rem;color:#ff9999;align-self:flex-end;margin-left:3px;white-space:nowrap}
+/* 2-column layout for side players */
+.hand-2col{display:flex;gap:5px;justify-content:center}
+.hand-col{display:flex;flex-direction:column;gap:3px}
+.side-rev-label{font-size:.6rem;color:#ff9999;text-align:center;margin-top:2px}
 
 /* ACTIONS */
 #action-area{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;padding:8px}
@@ -105,16 +110,22 @@ h1{font-size:2.2rem;text-align:center;padding:16px;color:#ffd700;text-shadow:2px
 </div>
 
 <div id="game-board">
-  <div id="opponents-area"></div>
-  <div id="center-area">
-    <div id="msg">ゲームを開始してください</div>
-    <div id="turn-info"></div>
-    <div id="deck-info"></div>
+  <div id="top-zone"></div>
+  <div id="middle-zone">
+    <div id="left-zone"></div>
+    <div id="center-zone">
+      <div id="msg">ゲームを開始してください</div>
+      <div id="turn-info"></div>
+      <div id="deck-info"></div>
+    </div>
+    <div id="right-zone"></div>
   </div>
-  <div id="player-area">
-    <h3>あなたの手札</h3>
-    <div id="player-hand"></div>
-    <div id="player-sum"></div>
+  <div id="player-zone">
+    <div id="player-area">
+      <h3>あなたの手札</h3>
+      <div id="player-hand"></div>
+      <div id="player-sum"></div>
+    </div>
   </div>
   <div id="action-area"></div>
 </div>
@@ -181,7 +192,7 @@ function startGame(n){
   G.players.filter(p=>!p.isHuman).forEach(p=>aiReveal(p));
   document.getElementById('start-screen').style.display='none';
   const gb=document.getElementById('game-board');
-  gb.style.display='flex';gb.style.flexDirection='column';gb.style.gap='8px';
+  gb.style.display='flex';
   G.msg='あなたの手札から2枚クリックして開示するカードを選んでください';
   render();
 }
@@ -504,6 +515,16 @@ function restart(){
   document.getElementById('start-screen').style.flexDirection='column';
 }
 
+// ===================== POSITION =====================
+function getPos(pid){
+  const n=G.players.length,ai=pid-1;
+  if(n===2)return'top';
+  if(n===3)return ai===0?'left':'right';
+  if(n===4){if(ai===0)return'top';if(ai===1)return'left';return'right';}
+  // n===5
+  if(ai===0)return'topleft';if(ai===1)return'topright';if(ai===2)return'left';return'right';
+}
+
 // ===================== RENDER =====================
 function render(){
   renderOpponents();renderPlayer();renderActions();
@@ -518,34 +539,74 @@ function render(){
   document.getElementById('deck-info').textContent=`山札: ${G.deck?G.deck.length:0}枚`;
 }
 
+function oppBoxHTML(p,active,pos){
+  const isVert=pos==='left'||pos==='right';
+  const nonRev=p.hand.filter(c=>!c.revealed);
+  const rev=p.hand.filter(c=>c.revealed);
+  let cards='';
+  if(isVert){
+    // 2 columns: hidden | revealed
+    const nrH=nonRev.map(c=>cardHTML(c,{sm:true,back:true})).join('');
+    const rH=rev.map(c=>cardHTML(c,{sm:true})).join('');
+    cards=`<div class="hand-2col">
+      <div class="hand-col">${nrH||'<span style="width:50px;display:block"></span>'}</div>
+      <div class="hand-col">${rH}${rev.length?'<div class="side-rev-label">開示</div>':''}</div>
+    </div>`;
+  }else{
+    // 2 rows: hidden top, revealed bottom
+    const nrH=nonRev.map(c=>cardHTML(c,{sm:true,back:true})).join('');
+    const rH=rev.map(c=>cardHTML(c,{sm:true})).join('');
+    cards=`<div class="hand-row">${nrH}</div>
+    <div class="hand-row rev-row">${rH}${rev.length?'<span class="rev-label">←開示</span>':''}</div>`;
+  }
+  return`<div class="opp-box${active?' active':''}">
+    <div class="opp-name">${p.name}</div>
+    <div class="opp-sum">開示: ${revSum(p)}</div>
+    ${cards}
+  </div>`;
+}
+
 function renderOpponents(){
+  if(!G.players)return;
   const pi=G.turnOrder.length?G.turnOrder[G.curPos%G.turnOrder.length]:-1;
-  let h='';
+  const zones={top:'',topleft:'',topright:'',left:'',right:''};
   G.players.filter(p=>!p.isHuman).forEach(p=>{
+    const pos=getPos(p.id);
     const active=p.id===pi&&['ai-turn','turn-end'].includes(G.phase);
-    h+=`<div class="opp-box${active?' active':''}">
-      <div class="opp-name">${p.name}</div>
-      <div class="opp-sum">開示合計: ${revSum(p)}</div>
-      <div class="hand-row">`;
-    p.hand.forEach(c=>{h+=cardHTML(c,{sm:true,back:!c.revealed});});
-    h+=`</div></div>`;
+    zones[pos]+=oppBoxHTML(p,active,pos);
   });
-  document.getElementById('opponents-area').innerHTML=h;
+  const topH=zones.top||(zones.topleft||zones.topright
+    ?`<div style="display:flex;gap:12px;justify-content:center">${zones.topleft}${zones.topright}</div>`:'');
+  document.getElementById('top-zone').innerHTML=topH;
+  document.getElementById('left-zone').innerHTML=zones.left;
+  document.getElementById('right-zone').innerHTML=zones.right;
 }
 
 function renderPlayer(){
   const p=G.players[0];if(!p)return;
   document.getElementById('player-sum').textContent=`開示カード合計: ${revSum(p)}`;
-  let h='';
-  p.hand.forEach((c,i)=>{
-    const isRev=G.phase==='reveal';
-    const isDraw=G.phase==='human-draw';
-    const sel=isRev&&G.selCards.includes(i);
-    const click=isRev||isDraw;
-    const fn=isRev?'clickReveal':isDraw?'clickDiscard':null;
-    h+=cardHTML(c,{click,sel,fn,idx:i});
-  });
-  document.getElementById('player-hand').innerHTML=h;
+  const isRevPhase=G.phase==='reveal';
+  const isDrawPhase=G.phase==='human-draw';
+  let row1='',row2='';
+  if(isRevPhase){
+    // row1=未選択(予定外), row2=選択済(開示予定)
+    p.hand.forEach((c,i)=>{
+      const sel=G.selCards.includes(i);
+      const h=cardHTML(c,{click:true,sel,fn:'clickReveal',idx:i});
+      if(sel)row2+=h;else row1+=h;
+    });
+    document.getElementById('player-hand').innerHTML=
+      `<div class="hand-row">${row1}</div>`+
+      `<div class="hand-row rev-row">${row2}${row2?'<span class="rev-label">←開示予定</span>':''}</div>`;
+  }else{
+    const nonRev=p.hand.map((c,i)=>({c,i})).filter(x=>!x.c.revealed);
+    const rev=p.hand.map((c,i)=>({c,i})).filter(x=>x.c.revealed);
+    nonRev.forEach(x=>{row1+=cardHTML(x.c,{click:isDrawPhase,fn:isDrawPhase?'clickDiscard':null,idx:x.i});});
+    rev.forEach(x=>{row2+=cardHTML(x.c,{click:isDrawPhase,fn:isDrawPhase?'clickDiscard':null,idx:x.i});});
+    document.getElementById('player-hand').innerHTML=
+      `<div class="hand-row">${row1||'<span style="font-size:.75rem;color:#666">（なし）</span>'}</div>`+
+      `<div class="hand-row rev-row">${row2}${row2?'<span class="rev-label">←開示</span>':''}</div>`;
+  }
 }
 
 function renderActions(){
