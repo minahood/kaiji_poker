@@ -549,9 +549,9 @@ function oppBoxHTML(p,active,pos){
   const rev=p.hand.filter(c=>c.revealed);
   const nrH=nonRev.map(c=>cardHTML(c,{sm:true,back:true})).join('');
   const rH=rev.map(c=>cardHTML(c,{sm:true})).join('');
-  // revealed bottom (front/closer to center), non-revealed top (back)
-  const cards=`<div class="hand-row">${nrH}</div>
-    <div class="hand-row rev-row">${rH}</div>`;
+  // revealed top (HTML) → after rotation becomes back/奥 from viewer
+  const cards=`<div class="hand-row rev-row">${rH}</div>
+    <div class="hand-row">${nrH}</div>`;
   return`<div class="opp-box pos-${pos}${active?' active':''}">
     <div class="opp-name">${p.name}</div>
     <div class="opp-sum">${revSum(p)}</div>
