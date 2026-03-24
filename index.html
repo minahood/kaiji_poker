@@ -42,6 +42,10 @@ h1{font-size:2.2rem;text-align:center;padding:16px;color:#ffd700;text-shadow:2px
 .hand-2col{display:flex;gap:5px;justify-content:center}
 .hand-col{display:flex;flex-direction:column;gap:3px}
 .side-rev-label{font-size:.6rem;color:#ff9999;text-align:center;margin-top:2px}
+/* card rotation by position */
+.opp-box.pos-top .card,.opp-box.pos-topleft .card,.opp-box.pos-topright .card{transform:rotate(180deg)}
+.opp-box.pos-left .card{transform:rotate(90deg);margin:11px -11px}
+.opp-box.pos-right .card{transform:rotate(-90deg);margin:11px -11px}
 
 /* ACTIONS */
 #action-area{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;padding:8px}
@@ -560,7 +564,7 @@ function oppBoxHTML(p,active,pos){
     cards=`<div class="hand-row">${nrH}</div>
     <div class="hand-row rev-row">${rH}</div>`;
   }
-  return`<div class="opp-box${active?' active':''}">
+  return`<div class="opp-box pos-${pos}${active?' active':''}">
     <div class="opp-name">${p.name}</div>
     <div class="opp-sum">${revSum(p)}</div>
     ${cards}
