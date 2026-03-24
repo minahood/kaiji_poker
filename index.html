@@ -589,16 +589,16 @@ function renderPlayer(){
       if(sel)row2+=h;else row1+=h;
     });
     document.getElementById('player-hand').innerHTML=
-      `<div class="hand-row">${row1}</div>`+
-      `<div class="hand-row rev-row">${row2}</div>`;
+      `<div class="hand-row rev-row">${row2}</div>`+
+      `<div class="hand-row">${row1}</div>`;
   }else{
     const nonRev=p.hand.map((c,i)=>({c,i})).filter(x=>!x.c.revealed);
     const rev=p.hand.map((c,i)=>({c,i})).filter(x=>x.c.revealed);
     nonRev.forEach(x=>{row1+=cardHTML(x.c,{click:isDrawPhase,fn:isDrawPhase?'clickDiscard':null,idx:x.i});});
     rev.forEach(x=>{row2+=cardHTML(x.c,{click:isDrawPhase,fn:isDrawPhase?'clickDiscard':null,idx:x.i});});
     document.getElementById('player-hand').innerHTML=
-      `<div class="hand-row">${row1||'<span style="font-size:.75rem;color:#666">（なし）</span>'}</div>`+
-      `<div class="hand-row rev-row">${row2}</div>`;
+      `<div class="hand-row rev-row">${row2}</div>`+
+      `<div class="hand-row">${row1||'<span style="font-size:.75rem;color:#666">（なし）</span>'}</div>`;
   }
 }
 
