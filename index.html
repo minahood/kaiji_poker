@@ -19,9 +19,9 @@ h1{font-size:2.2rem;text-align:center;padding:16px;color:#ffd700;text-shadow:2px
 #game-board{display:none;width:100%;max-width:1100px;padding:8px;flex-direction:column;gap:6px}
 #top-zone{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;min-height:10px;padding:4px 4px 0}
 #middle-zone{display:flex;align-items:stretch;gap:8px}
-#left-zone{display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;flex-shrink:0;min-width:120px}
+#left-zone{display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;flex-shrink:0;min-width:220px}
 #center-zone{flex:1;background:rgba(0,0,0,.3);border-radius:10px;padding:14px;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:6px}
-#right-zone{display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;flex-shrink:0;min-width:120px}
+#right-zone{display:flex;flex-direction:column;gap:10px;align-items:center;justify-content:center;flex-shrink:0;min-width:220px}
 #player-zone{display:flex;justify-content:center;padding:0 4px}
 #player-area{background:rgba(0,0,0,.3);border:2px solid #2a5a8a;border-radius:10px;padding:12px;width:100%}
 #player-area h3{font-size:.9rem;color:#aaa;margin-bottom:8px;text-align:center}
@@ -29,7 +29,7 @@ h1{font-size:2.2rem;text-align:center;padding:16px;color:#ffd700;text-shadow:2px
 #player-sum{text-align:center;margin-top:6px;font-size:.8rem;color:#ffd700}
 
 /* OPPONENTS */
-.opp-box{background:rgba(0,0,0,.3);border:2px solid #4a9a4a;border-radius:10px;padding:8px;text-align:center}
+.opp-box{background:rgba(0,0,0,.3);border:2px solid #4a9a4a;border-radius:10px;padding:8px;text-align:center;width:210px}
 .opp-box.active{border-color:#ffd700;box-shadow:0 0 14px rgba(255,215,0,.5)}
 .opp-name{font-size:.8rem;color:#aaa;margin-bottom:2px}
 .opp-sum{font-size:.7rem;color:#ffd700;margin-bottom:4px}
@@ -42,10 +42,10 @@ h1{font-size:2.2rem;text-align:center;padding:16px;color:#ffd700;text-shadow:2px
 .hand-2col{display:flex;gap:5px;justify-content:center}
 .hand-col{display:flex;flex-direction:column;gap:3px}
 .side-rev-label{font-size:.6rem;color:#ff9999;text-align:center;margin-top:2px}
-/* card rotation by position */
-.opp-box.pos-top .card,.opp-box.pos-topleft .card,.opp-box.pos-topright .card{transform:rotate(180deg)}
-.opp-box.pos-left .card{transform:rotate(90deg);margin:11px -11px}
-.opp-box.pos-right .card{transform:rotate(-90deg);margin:11px -11px}
+/* rotate entire opp-box to face center */
+.opp-box.pos-top,.opp-box.pos-topleft,.opp-box.pos-topright{transform:rotate(180deg)}
+.opp-box.pos-left{transform:rotate(90deg)}
+.opp-box.pos-right{transform:rotate(-90deg)}
 
 /* ACTIONS */
 #action-area{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;padding:8px}
@@ -545,25 +545,13 @@ function render(){
 }
 
 function oppBoxHTML(p,active,pos){
-  const isVert=pos==='left'||pos==='right';
   const nonRev=p.hand.filter(c=>!c.revealed);
   const rev=p.hand.filter(c=>c.revealed);
-  let cards='';
-  if(isVert){
-    // 2 columns: hidden | revealed
-    const nrH=nonRev.map(c=>cardHTML(c,{sm:true,back:true})).join('');
-    const rH=rev.map(c=>cardHTML(c,{sm:true})).join('');
-    cards=`<div class="hand-2col">
-      <div class="hand-col">${nrH||'<span style="width:50px;display:block"></span>'}</div>
-      <div class="hand-col">${rH}</div>
-    </div>`;
-  }else{
-    // 2 rows: hidden top, revealed bottom
-    const nrH=nonRev.map(c=>cardHTML(c,{sm:true,back:true})).join('');
-    const rH=rev.map(c=>cardHTML(c,{sm:true})).join('');
-    cards=`<div class="hand-row">${nrH}</div>
+  const nrH=nonRev.map(c=>cardHTML(c,{sm:true,back:true})).join('');
+  const rH=rev.map(c=>cardHTML(c,{sm:true})).join('');
+  // revealed bottom (front/closer to center), non-revealed top (back)
+  const cards=`<div class="hand-row">${nrH}</div>
     <div class="hand-row rev-row">${rH}</div>`;
-  }
   return`<div class="opp-box pos-${pos}${active?' active':''}">
     <div class="opp-name">${p.name}</div>
     <div class="opp-sum">${revSum(p)}</div>
