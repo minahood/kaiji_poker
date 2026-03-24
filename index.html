@@ -189,7 +189,6 @@ function startGame(n){
     msg:''
   };
   G.players.forEach(p=>{p.hand=G.deck.splice(0,5).map(c=>({...c}));});
-  G.players.filter(p=>!p.isHuman).forEach(p=>aiReveal(p));
   document.getElementById('start-screen').style.display='none';
   const gb=document.getElementById('game-board');
   gb.style.display='flex';
@@ -215,7 +214,9 @@ function clickReveal(i){
 
 function confirmReveal(){
   if(G.selCards.length!==2)return;
+  // 一斉開示：人間の選択を確定してから全AIも同時に開示
   G.selCards.forEach(i=>{G.players[0].hand[i].revealed=true;});
+  G.players.filter(p=>!p.isHuman).forEach(p=>aiReveal(p));
   G.selCards=[];
   // determine turn order
   const sorted=[...G.players].map((p,i)=>({p,i,s:revSum(p)})).sort((a,b)=>a.s-b.s||a.i-b.i);
@@ -550,14 +551,14 @@ function oppBoxHTML(p,active,pos){
     const rH=rev.map(c=>cardHTML(c,{sm:true})).join('');
     cards=`<div class="hand-2col">
       <div class="hand-col">${nrH||'<span style="width:50px;display:block"></span>'}</div>
-      <div class="hand-col">${rH}${rev.length?'<div class="side-rev-label">開示</div>':''}</div>
+      <div class="hand-col">${rH}</div>
     </div>`;
   }else{
     // 2 rows: hidden top, revealed bottom
     const nrH=nonRev.map(c=>cardHTML(c,{sm:true,back:true})).join('');
     const rH=rev.map(c=>cardHTML(c,{sm:true})).join('');
     cards=`<div class="hand-row">${nrH}</div>
-    <div class="hand-row rev-row">${rH}${rev.length?'<span class="rev-label">←開示</span>':''}</div>`;
+    <div class="hand-row rev-row">${rH}</div>`;
   }
   return`<div class="opp-box${active?' active':''}">
     <div class="opp-name">${p.name}</div>
@@ -597,7 +598,7 @@ function renderPlayer(){
     });
     document.getElementById('player-hand').innerHTML=
       `<div class="hand-row">${row1}</div>`+
-      `<div class="hand-row rev-row">${row2}${row2?'<span class="rev-label">←開示予定</span>':''}</div>`;
+      `<div class="hand-row rev-row">${row2}</div>`;
   }else{
     const nonRev=p.hand.map((c,i)=>({c,i})).filter(x=>!x.c.revealed);
     const rev=p.hand.map((c,i)=>({c,i})).filter(x=>x.c.revealed);
@@ -605,7 +606,7 @@ function renderPlayer(){
     rev.forEach(x=>{row2+=cardHTML(x.c,{click:isDrawPhase,fn:isDrawPhase?'clickDiscard':null,idx:x.i});});
     document.getElementById('player-hand').innerHTML=
       `<div class="hand-row">${row1||'<span style="font-size:.75rem;color:#666">（なし）</span>'}</div>`+
-      `<div class="hand-row rev-row">${row2}${row2?'<span class="rev-label">←開示</span>':''}</div>`;
+      `<div class="hand-row rev-row">${row2}</div>`;
   }
 }
 
