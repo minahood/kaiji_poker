@@ -801,10 +801,61 @@ function execIncoming(){
 }
 
 // ===================== AI LOGIC =====================
+
+// フラッシュ/ストレートまであと1枚かを判定
+function aiIsOneAway(hand){
+  // フラッシュ：同スートが4枚
+  const sc={};hand.forEach(c=>{sc[c.suit]=(sc[c.suit]||0)+1;});
+  if(Object.values(sc).some(n=>n===4))return true;
+  // ストレート：4枚が連続
+  const sorted=hand.map(c=>c.value).sort((a,b)=>a-b);
+  for(let skip=0;skip<5;skip++){
+    const sub=sorted.filter((_,k)=>k!==skip);
+    const uniq=[...new Set(sub)].sort((a,b)=>a-b);
+    if(uniq.length===4&&isConsecutive4(uniq))return true;
+  }
+  return false;
+}
+
+function isConsecutive4(v){
+  if(v[3]-v[0]===3)return true;
+  // A-2-3-4（エースローのストレート候補）
+  if(v[0]===2&&v[1]===3&&v[2]===4&&v[3]===14)return true;
+  return false;
+}
+
+// 捨てるカードを戦略的に選ぶ
+function aiPickDiscard(hand){
+  // 1. フラッシュまであと1枚 → スートが合わない1枚を捨てる
+  const suitMap={};
+  hand.forEach((c,i)=>{(suitMap[c.suit]=suitMap[c.suit]||[]).push(i);});
+  for(const idxs of Object.values(suitMap)){
+    if(idxs.length===4)return hand.findIndex((_,i)=>!idxs.includes(i));
+  }
+
+  // 2. ストレートまであと1枚 → 外れの1枚を捨てる
+  const sorted=hand.map((c,i)=>({v:c.value,i})).sort((a,b)=>a.v-b.v);
+  for(let skip=0;skip<5;skip++){
+    const sub=sorted.filter((_,k)=>k!==skip).map(x=>x.v);
+    const uniq=[...new Set(sub)].sort((a,b)=>a-b);
+    if(uniq.length===4&&isConsecutive4(uniq))return sorted[skip].i;
+  }
+
+  // 3. スリーカード・フルハウス狙い → ペア・トリプル以外の最低値カードを捨てる
+  const cnt={};hand.forEach(c=>{cnt[c.value]=(cnt[c.value]||0)+1;});
+  const singles=hand.map((c,i)=>({c,i})).filter(x=>cnt[x.c.value]===1);
+  if(singles.length>0)return singles.sort((a,b)=>a.c.value-b.c.value)[0].i;
+
+  // フォールバック：最低値カードを捨てる
+  return hand.map((c,i)=>({c,i})).sort((a,b)=>a.c.value-b.c.value)[0].i;
+}
+
 function aiTurn(pi){
   const p=G.players[pi];
-  if(G.deck.length>0&&Math.random()<0.7){
-    const discIdx=p.hand.map((c,i)=>({c,i})).sort((a,b)=>a.c.value-b.c.value)[0].i;
+  const discIdx=aiPickDiscard(p.hand);
+  const oneAway=aiIsOneAway(p.hand);
+  // フラッシュ/ストレート1枚差なら必ずドロー、それ以外は70%でドロー
+  if(G.deck.length>0&&(oneAway||Math.random()<0.7)){
     const was=p.hand[discIdx].revealed;
     p.hand.splice(discIdx,1);
     const nc=G.deck.shift();nc.revealed=was;p.hand.push(nc);
@@ -820,7 +871,7 @@ function aiTurn(pi){
       setTimeout(()=>showIncoming(pi,cards),600);
     }else{
       if(G.deck.length>0){
-        const di=p.hand.map((c,i)=>({c,i})).sort((a,b)=>a.c.value-b.c.value)[0].i;
+        const di=aiPickDiscard(p.hand);
         const was=p.hand[di].revealed;p.hand.splice(di,1);
         const nc=G.deck.shift();nc.revealed=was;p.hand.push(nc);
       }
