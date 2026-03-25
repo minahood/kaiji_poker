@@ -485,20 +485,156 @@ h1 .sub {
   letter-spacing: 0.08em;
 }
 
+/* ===================== ONLINE SCREENS ===================== */
+#online-screen, #wait-screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin-top: 36px;
+  padding: 0 16px;
+}
+
+.text-input {
+  background: transparent;
+  border: 1px solid var(--gold-dim);
+  color: var(--text);
+  padding: 10px 16px;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 1rem;
+  text-align: center;
+  letter-spacing: 0.1em;
+  width: 100%;
+  max-width: 280px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.text-input:focus { border-color: var(--gold); }
+
+.code-input {
+  letter-spacing: 0.4em;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  max-width: 180px;
+}
+
+.online-section-title {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  letter-spacing: 0.2em;
+  margin-top: 8px;
+}
+
+.online-lead {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+.pc-divider {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  letter-spacing: 0.15em;
+  margin: 4px 0;
+}
+
+.pc-btn-online {
+  background: linear-gradient(135deg, rgba(201,168,76,0.12), rgba(201,168,76,0.06));
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.pc-btn-online:hover {
+  background: var(--gold);
+  color: #0a0a0a;
+}
+.pc-btn-online span { color: inherit; }
+
+.pc-btn-text {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  padding: 6px 12px;
+  transition: color 0.2s;
+}
+.pc-btn-text:hover { color: var(--text); }
+
+.wait-code-display {
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: var(--gold);
+  letter-spacing: 0.5em;
+  text-shadow: 0 0 24px rgba(201,168,76,0.5);
+  padding: 10px 0;
+}
+
+.wait-players {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 60px;
+  align-items: center;
+}
+
+.wait-player {
+  font-size: 0.88rem;
+  color: var(--text);
+  letter-spacing: 0.1em;
+}
+
+.wait-msg {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
 </style>
 </head>
 <body>
 
 <h1>カイジポーカー<span class="sub">KAIJI POKER</span></h1>
 
+<!-- スタート画面 -->
 <div id="start-screen">
   <p>プレイヤー人数を選んでください（あなた＋AI）</p>
   <button class="pc-btn" onclick="startGame(2)"><span>2人（AI 1人）</span></button>
   <button class="pc-btn" onclick="startGame(3)"><span>3人（AI 2人）</span></button>
   <button class="pc-btn" onclick="startGame(4)"><span>4人（AI 3人）</span></button>
   <button class="pc-btn" onclick="startGame(5)"><span>5人（AI 4人）</span></button>
+  <div class="pc-divider">── または ──</div>
+  <button class="pc-btn pc-btn-online" onclick="showOnlineScreen()"><span>オンライン対戦</span></button>
 </div>
 
+<!-- オンライン入室画面 -->
+<div id="online-screen">
+  <p class="online-lead">名前を入力してください</p>
+  <input id="player-name" class="text-input" placeholder="プレイヤー名（最大8文字）" maxlength="8">
+  <div class="online-section-title">ルームを作成する</div>
+  <button class="pc-btn pc-btn-online" onclick="createRoom()"><span>ルーム作成</span></button>
+  <div class="online-section-title">ルームに参加する</div>
+  <input id="room-code-input" class="text-input code-input" placeholder="4文字のコード" maxlength="4">
+  <button class="pc-btn" onclick="joinRoomByInput()"><span>参加する</span></button>
+  <button class="pc-btn-text" onclick="showStartScreen()">← 戻る</button>
+</div>
+
+<!-- 待機画面 -->
+<div id="wait-screen">
+  <p class="online-lead">ルームコード</p>
+  <div id="wait-code" class="wait-code-display">----</div>
+  <p class="online-lead" style="font-size:.8rem">このコードを相手に教えてください</p>
+  <div id="wait-players" class="wait-players"></div>
+  <button id="start-btn" class="pc-btn pc-btn-online" onclick="startOnlineGame()" style="display:none"><span>ゲーム開始</span></button>
+  <p id="wait-msg" class="wait-msg">他のプレイヤーを待っています...</p>
+  <button class="pc-btn-text" onclick="showStartScreen()">← 退室</button>
+</div>
+
+<!-- ゲームボード -->
 <div id="game-board">
   <div id="top-zone"></div>
   <div id="middle-zone">
@@ -520,6 +656,7 @@ h1 .sub {
   <div id="action-area"></div>
 </div>
 
+<!-- トレードモーダル -->
 <div id="modal-bg">
   <div id="modal">
     <h2 id="modal-title">カード交換</h2>
@@ -527,11 +664,165 @@ h1 .sub {
   </div>
 </div>
 
+<!-- ショーダウン -->
 <div id="sd-bg">
   <div id="sd"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// ===================== SUPABASE =====================
+const SUPABASE_URL='https://bpefqgeiicomijaysxhu.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwZWZxZ2VpaWNvbWlqYXlzeGh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MjY1MjEsImV4cCI6MjA5MDAwMjUyMX0.MYxA8lsQMBI3Yc5ZcMu35rEOnf5pdZ0BoP0xuMT2gg4';
+let supabaseClient=null,myPlayerId=null,myIdx=0,myName='あなた';
+
+function initSupabase(){
+  if(typeof window.supabase==='undefined')return;
+  supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  myPlayerId=localStorage.getItem('kaiji_pid')||crypto.randomUUID();
+  localStorage.setItem('kaiji_pid',myPlayerId);
+}
+
+function myPlayer(){return G.players?G.players[myIdx]:null;}
+
+function isMyTurn(){
+  if(!G.online)return true;
+  if(!G.turnOrder||G.turnOrder.length===0)return false;
+  const idx=G.turnOrder[G.curPos%G.turnOrder.length];
+  return G.playerIds&&G.playerIds[idx]===myPlayerId;
+}
+
+async function pushState(){
+  if(!G.online||!supabaseClient)return;
+  await supabaseClient.from('rooms').update({state:G}).eq('code',G.roomCode);
+}
+
+function subscribeRoom(code){
+  if(!supabaseClient)return;
+  supabaseClient.channel(`room-${code}`)
+    .on('postgres_changes',
+      {event:'UPDATE',schema:'public',table:'rooms',filter:`code=eq.${code}`},
+      (payload)=>{
+        G=payload.new.state;
+        myIdx=G.playerIds?G.playerIds.indexOf(myPlayerId):0;
+        updateWaitScreen();
+        const ws=document.getElementById('wait-screen');
+        if(G.phase!=='waiting'&&ws&&ws.style.display!=='none'){
+          ws.style.display='none';
+          document.getElementById('game-board').style.display='flex';
+        }
+        if(G.tradeState)checkIncomingTrade();
+        render();
+      }
+    ).subscribe();
+}
+
+function checkIncomingTrade(){
+  if(!G.online||!G.tradeState)return;
+  const ts=G.tradeState;
+  const mb=document.getElementById('modal-bg');
+  if(ts.phase==='pending'&&G.playerIds[ts.targetIdx]===myPlayerId
+    &&(!mb||!mb.classList.contains('on'))){
+    showIncoming(ts.proposerIdx,ts.offeredCards);
+  }
+  if(ts.phase==='accepted'&&G.playerIds[ts.proposerIdx]===myPlayerId){
+    execOnlineTrade();
+  }
+  if(ts.phase==='rejected'&&G.playerIds[ts.proposerIdx]===myPlayerId){
+    closeModal();G.tradeState=null;G.phase='turn-end';
+    G.msg='提案が拒否されました。';render();setTimeout(endTurn,1200);
+  }
+}
+
+// ===================== ROOM UI =====================
+function showOnlineScreen(){
+  document.getElementById('start-screen').style.display='none';
+  const os=document.getElementById('online-screen');
+  os.style.display='flex';os.style.flexDirection='column';
+}
+
+function showStartScreen(){
+  ['online-screen','wait-screen','game-board'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
+  const ss=document.getElementById('start-screen');
+  ss.style.display='flex';ss.style.flexDirection='column';
+  if(supabaseClient)supabaseClient.removeAllChannels();
+  G={};myIdx=0;
+}
+
+function showWaitScreen(code){
+  document.getElementById('online-screen').style.display='none';
+  const ws=document.getElementById('wait-screen');
+  ws.style.display='flex';ws.style.flexDirection='column';
+  document.getElementById('wait-code').textContent=code;
+  updateWaitScreen();
+}
+
+function updateWaitScreen(){
+  const ws=document.getElementById('wait-screen');
+  if(!ws||ws.style.display==='none')return;
+  const pl=G.players||[];
+  document.getElementById('wait-players').innerHTML=
+    pl.map(p=>`<div class="wait-player">● ${p.name}</div>`).join('');
+  const isHost=myIdx===0;
+  const btn=document.getElementById('start-btn');
+  if(btn)btn.style.display=(isHost&&pl.length>=2)?'block':'none';
+  const msg=document.getElementById('wait-msg');
+  if(msg)msg.textContent=isHost
+    ?'他のプレイヤーを待っています...'
+    :'ホストがゲームを開始するまで待ってください...';
+}
+
+async function createRoom(){
+  if(!supabaseClient){alert('Supabase未接続');return;}
+  myName=(document.getElementById('player-name').value.trim()||'プレイヤー1').slice(0,8);
+  const code=(Math.random().toString(36).slice(2,6)).toUpperCase();
+  const state={online:true,roomCode:code,phase:'waiting',
+    players:[{id:0,name:myName,isHuman:true,hand:[]}],
+    playerIds:[myPlayerId],revealReady:[false],
+    deck:[],turnOrder:[],curPos:0,turnsDone:0,selCards:[],tradeState:null,msg:''};
+  const {error}=await supabaseClient.from('rooms').insert({code,state});
+  if(error){alert('ルーム作成エラー: '+error.message);return;}
+  G=state;myIdx=0;
+  subscribeRoom(code);
+  showWaitScreen(code);
+}
+
+async function joinRoomByInput(){
+  if(!supabaseClient){alert('Supabase未接続');return;}
+  myName=(document.getElementById('player-name').value.trim()||'プレイヤー?').slice(0,8);
+  const code=(document.getElementById('room-code-input').value.trim()).toUpperCase();
+  if(code.length!==4){alert('4文字のコードを入力してください');return;}
+  const {data,error}=await supabaseClient.from('rooms').select('state').eq('code',code).single();
+  if(error||!data){alert('ルームが見つかりません');return;}
+  const st=data.state;
+  if(st.phase!=='waiting'){alert('このルームはすでにゲーム中です');return;}
+  if(st.players.length>=5){alert('満員です（最大5人）');return;}
+  const seat=st.players.length;
+  st.players.push({id:seat,name:myName,isHuman:true,hand:[]});
+  st.playerIds.push(myPlayerId);
+  st.revealReady.push(false);
+  await supabaseClient.from('rooms').update({state:st}).eq('code',code);
+  G=st;myIdx=seat;
+  subscribeRoom(code);
+  showWaitScreen(code);
+}
+
+async function startOnlineGame(){
+  if(myIdx!==0){alert('ホストのみ開始できます');return;}
+  const deck=shuffle(mkDeck());
+  G.players.forEach(p=>{p.hand=deck.splice(0,5).map(c=>({...c}));});
+  G.deck=deck;G.phase='reveal';G.turnOrder=[];G.curPos=0;
+  G.turnsDone=0;G.selCards=[];G.tradeState=null;
+  G.revealReady=G.players.map(()=>false);
+  G.msg='手札から2枚クリックして開示するカードを選んでください';
+  await pushState();
+  document.getElementById('wait-screen').style.display='none';
+  document.getElementById('game-board').style.display='flex';
+  render();
+}
+
 // ===================== CONSTANTS =====================
 const SUITS=['spades','hearts','diamonds','clubs'];
 const SYM={spades:'♠',hearts:'♥',diamonds:'♦',clubs:'♣'};
@@ -566,8 +857,10 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random
 
 // ===================== INIT =====================
 function startGame(n){
+  myIdx=0;
   const names=['あなた','カズヤ','リョウ','ハル','ユキ'];
   G={
+    online:false,
     phase:'reveal',
     players:Array.from({length:n},(_,i)=>({id:i,name:names[i],isHuman:i===0,hand:[]})),
     deck:shuffle(mkDeck()),
@@ -580,8 +873,10 @@ function startGame(n){
   };
   G.players.forEach(p=>{p.hand=G.deck.splice(0,5).map(c=>({...c}));});
   document.getElementById('start-screen').style.display='none';
-  const gb=document.getElementById('game-board');
-  gb.style.display='flex';
+  ['online-screen','wait-screen'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
+  document.getElementById('game-board').style.display='flex';
   G.msg='あなたの手札から2枚クリックして開示するカードを選んでください';
   render();
 }
@@ -602,15 +897,36 @@ function clickReveal(i){
   render();
 }
 
-function confirmReveal(){
+async function confirmReveal(){
   if(G.selCards.length!==2)return;
-  G.selCards.forEach(i=>{G.players[0].hand[i].revealed=true;});
-  G.players.filter(p=>!p.isHuman).forEach(p=>aiReveal(p));
+  if(G.online){
+    // Read latest state first to avoid lost-update race
+    const {data}=await supabaseClient.from('rooms').select('state').eq('code',G.roomCode).single();
+    if(data){G=data.state;myIdx=G.playerIds.indexOf(myPlayerId);}
+  }
+  G.selCards.forEach(i=>{myPlayer().hand[i].revealed=true;});
   G.selCards=[];
-  const sorted=[...G.players].map((p,i)=>({p,i,s:revSum(p)})).sort((a,b)=>a.s-b.s||a.i-b.i);
-  G.turnOrder=sorted.map(x=>x.i);
-  G.phase='turn-start';
-  nextTurn();
+  if(G.online){
+    G.revealReady[myIdx]=true;
+    if(G.revealReady.every(r=>r)){
+      G.players.filter(p=>!p.isHuman).forEach(p=>aiReveal(p));
+      const sorted=[...G.players].map((p,i)=>({p,i,s:revSum(p)})).sort((a,b)=>a.s-b.s||a.i-b.i);
+      G.turnOrder=sorted.map(x=>x.i);
+      G.phase='human-action';
+      const pi=curPlayerIdx();
+      G.msg=`【ラウンド1】${G.players[pi].name} のターンです`;
+    }else{
+      G.msg='他のプレイヤーの開示を待っています...';
+    }
+    await pushState();
+    render();
+  }else{
+    G.players.filter(p=>!p.isHuman).forEach(p=>aiReveal(p));
+    const sorted=[...G.players].map((p,i)=>({p,i,s:revSum(p)})).sort((a,b)=>a.s-b.s||a.i-b.i);
+    G.turnOrder=sorted.map(x=>x.i);
+    G.phase='turn-start';
+    nextTurn();
+  }
 }
 
 // ===================== TURNS =====================
@@ -621,7 +937,13 @@ function nextTurn(){
   const pi=curPlayerIdx();
   const p=G.players[pi];
   const r=Math.floor(G.turnsDone/G.players.length)+1;
-  if(p.isHuman){
+  if(G.online){
+    G.phase='human-action';
+    G.msg=isMyTurn()
+      ?`【ラウンド${r}】あなたのターンです。行動を選んでください。`
+      :`【ラウンド${r}】${p.name} のターンです...`;
+    render();
+  }else if(p.isHuman){
     G.phase='human-action';
     G.msg=`【ラウンド${r}】あなたのターンです。行動を選んでください。`;
     render();
@@ -635,7 +957,20 @@ function nextTurn(){
 
 function endTurn(){
   G.turnsDone++;G.curPos++;G.selCards=[];G.tradeState=null;
-  nextTurn();
+  if(G.online){
+    if(G.turnsDone>=G.players.length*2){
+      G.phase='showdown';
+      pushState().then(()=>doShowdown());
+    }else{
+      const pi=curPlayerIdx();
+      const r=Math.floor(G.turnsDone/G.players.length)+1;
+      G.phase='human-action';
+      G.msg=`【ラウンド${r}】${G.players[pi].name} のターンです`;
+      pushState().then(()=>render());
+    }
+  }else{
+    nextTurn();
+  }
 }
 
 // ===================== DRAW =====================
@@ -647,15 +982,15 @@ function selectDraw(){
 }
 
 function clickDiscard(i){
-  const p=G.players[0];
+  const p=myPlayer();
   const was=p.hand[i].revealed;
-  const disc={...p.hand[i],revealed:false};
   p.hand.splice(i,1);
   const nc=G.deck.shift();nc.revealed=was;
   p.hand.push(nc);
   G.msg=was?'開示カードを捨てたため、引いたカードも開示状態になります。':'カードを交換しました。';
-  G.phase='turn-end';render();
-  setTimeout(endTurn,1400);
+  G.phase='turn-end';
+  if(G.online){pushState().then(()=>{render();setTimeout(endTurn,1400);});}
+  else{render();setTimeout(endTurn,1400);}
 }
 
 function cancelDraw(){G.phase='human-action';G.msg='あなたのターンです。行動を選んでください。';render();}
@@ -678,7 +1013,7 @@ function renderModal(){
   const mb=document.getElementById('modal-body');
   if(ts.phase==='pick'){
     let h=`<div class="ms"><label>交換する相手：</label><div>`;
-    G.players.filter(p=>!p.isHuman).forEach(p=>{
+    G.players.filter(p=>G.online?p.id!==myPlayer().id:!p.isHuman).forEach(p=>{
       h+=`<button class="tgt-btn${ts.targetIdx===p.id?' on':''}" onclick="pickTarget(${p.id})">${p.name}</button>`;
     });
     h+=`</div></div><div class="ms"><label>提示するカード（1枚以上）：</label><div class="mc" id="mc"></div></div>`;
@@ -686,7 +1021,7 @@ function renderModal(){
     <button class="btn btn-cancel" onclick="cancelModal()">キャンセル</button></div>`;
     mb.innerHTML=h;
     let ch='';
-    G.players[0].hand.forEach((c,i)=>{
+    myPlayer().hand.forEach((c,i)=>{
       ch+=cardHTML(c,{click:true,sel:ts.offerIdx.includes(i),fn:'toggleOffer',idx:i});
     });
     document.getElementById('mc').innerHTML=ch;
@@ -716,10 +1051,19 @@ function cancelModal(){closeModal();G.tradeState=null;G.phase='human-action';G.m
 
 function proposeToAI(){
   const ts=G.tradeState;if(!ts||ts.targetIdx===null||ts.offerIdx.length===0)return;
+  if(G.online){
+    const offered=ts.offerIdx.map(i=>({...myPlayer().hand[i],origIdx:i}));
+    G.tradeState={phase:'pending',proposerIdx:myIdx,targetIdx:ts.targetIdx,
+      offeredCards:offered,giveIdx:[]};
+    G.msg=`${G.players[ts.targetIdx].name} に交換を提案しています...`;
+    closeModal();
+    pushState().then(()=>render());
+    return;
+  }
   ts.phase='deciding';renderModal();
   setTimeout(()=>{
     const ai=G.players[ts.targetIdx];
-    const offered=ts.offerIdx.map(i=>G.players[0].hand[i]);
+    const offered=ts.offerIdx.map(i=>myPlayer().hand[i]);
     const accept=aiAccept(ai,offered);
     if(accept){
       ts.aiGive=aiPickGive(ai,ts.offerIdx.length);
@@ -730,7 +1074,7 @@ function proposeToAI(){
 
 function execTrade(){
   const ts=G.tradeState;
-  const h=G.players[0],ai=G.players[ts.targetIdx];
+  const h=myPlayer(),ai=G.players[ts.targetIdx];
   const hGive=ts.offerIdx.map(i=>({...h.hand[i]}));
   const aGive=ts.aiGive.map(i=>({...ai.hand[i]}));
   [...ts.offerIdx].sort((a,b)=>b-a).forEach(i=>h.hand.splice(i,1));
@@ -739,6 +1083,23 @@ function execTrade(){
   hGive.forEach(c=>ai.hand.push(c));
   closeModal();G.msg=`${ai.name} とカードを交換しました！`;G.phase='turn-end';render();
   setTimeout(endTurn,1300);
+}
+
+function execOnlineTrade(){
+  const ts=G.tradeState;if(!ts||ts.phase!=='accepted')return;
+  const proposer=G.players[ts.proposerIdx];
+  const target=G.players[ts.targetIdx];
+  const pGive=ts.offeredCards.map(c=>{const nc={...c};delete nc.origIdx;return nc;});
+  const tGive=ts.giveCards||[];
+  const pIdxs=ts.offeredCards.map(c=>c.origIdx).sort((a,b)=>b-a);
+  pIdxs.forEach(i=>proposer.hand.splice(i,1));
+  const tIdxs=(ts.giveIdx||[]).sort((a,b)=>b-a);
+  tIdxs.forEach(i=>target.hand.splice(i,1));
+  tGive.forEach(c=>proposer.hand.push(c));
+  pGive.forEach(c=>target.hand.push(c));
+  G.tradeState=null;G.msg='カード交換が完了しました！';G.phase='turn-end';
+  closeModal();
+  pushState().then(()=>{render();setTimeout(endTurn,1300);});
 }
 
 function tradeEnd(){closeModal();G.phase='turn-end';G.msg='提案が拒否されました。';render();setTimeout(endTurn,1200);}
@@ -759,6 +1120,12 @@ function showIncoming(pi,cards){
 }
 
 function rejectIncoming(){
+  if(G.online){
+    G.tradeState={...G.tradeState,phase:'rejected'};
+    closeModal();G.msg='交換を拒否しました。';render();
+    pushState();
+    return;
+  }
   closeModal();G.msg='交換を拒否しました。';G.phase='turn-end';render();setTimeout(endTurn,1200);
 }
 
@@ -770,7 +1137,7 @@ function acceptIncoming(){
 
 function renderIncomingGive(){
   const ts=G.tradeState;
-  let ch=G.players[0].hand.map((c,i)=>
+  let ch=myPlayer().hand.map((c,i)=>
     cardHTML(c,{click:true,sel:ts.giveIdx.includes(i),fn:'toggleGive',idx:i})
   ).join('');
   document.getElementById('modal-body').innerHTML=`
@@ -788,7 +1155,14 @@ function toggleGive(i){
 
 function execIncoming(){
   const ts=G.tradeState;
-  const h=G.players[0],ai=G.players[ts.proposerIdx];
+  if(G.online){
+    const giveCards=ts.giveIdx.map(i=>({...myPlayer().hand[i]}));
+    G.tradeState={...ts,phase:'accepted',giveCards,giveIdx:ts.giveIdx};
+    closeModal();G.msg='交換を承諾しました。交換結果を待っています...';
+    pushState().then(()=>render());
+    return;
+  }
+  const h=myPlayer(),ai=G.players[ts.proposerIdx];
   const hGive=ts.giveIdx.map(i=>({...h.hand[i]}));
   const aGive=ts.offeredCards.map(c=>{const nc={...c};delete nc.origIdx;return nc;});
   [...ts.giveIdx].sort((a,b)=>b-a).forEach(i=>h.hand.splice(i,1));
@@ -928,6 +1302,7 @@ function cmpHands(a,b){
 // ===================== SHOWDOWN =====================
 function doShowdown(){
   G.phase='showdown';
+  if(G.online)pushState();
   const res=G.players.map(p=>({p,e:evalHand(p.hand)}));
   res.sort((a,b)=>cmpHands(b.e,a.e));
   const top=res[0];
@@ -949,8 +1324,10 @@ function doShowdown(){
 function restart(){
   document.getElementById('sd-bg').classList.remove('on');
   document.getElementById('game-board').style.display='none';
-  document.getElementById('start-screen').style.display='flex';
-  document.getElementById('start-screen').style.flexDirection='column';
+  if(G.online&&supabaseClient)supabaseClient.removeAllChannels();
+  G={};myIdx=0;
+  const ss=document.getElementById('start-screen');
+  ss.style.display='flex';ss.style.flexDirection='column';
 }
 
 // ===================== POSITION =====================
@@ -960,6 +1337,14 @@ function getPos(pid){
   if(n===3)return ai===0?'left':'right';
   if(n===4){if(ai===0)return'top';if(ai===1)return'left';return'right';}
   if(ai===0)return'topleft';if(ai===1)return'topright';if(ai===2)return'left';return'right';
+}
+
+function getOppPos(idx,n){
+  // idx: 0-based opponent index, n: number of opponents
+  if(n===1)return'top';
+  if(n===2)return idx===0?'left':'right';
+  if(n===3){if(idx===0)return'top';if(idx===1)return'left';return'right';}
+  if(idx===0)return'topleft';if(idx===1)return'topright';if(idx===2)return'left';return'right';
 }
 
 // ===================== RENDER =====================
@@ -992,12 +1377,18 @@ function oppBoxHTML(p,active,pos){
 
 function renderOpponents(){
   if(!G.players)return;
+  const me=myPlayer();
   const pi=G.turnOrder.length?G.turnOrder[G.curPos%G.turnOrder.length]:-1;
   const zones={top:'',topleft:'',topright:'',left:'',right:''};
-  G.players.filter(p=>!p.isHuman).forEach(p=>{
-    const pos=getPos(p.id);
-    const active=p.id===pi&&['ai-turn','turn-end'].includes(G.phase);
-    zones[pos]+=oppBoxHTML(p,active,pos);
+  const opponents=G.online&&me
+    ?G.players.filter(p=>p.id!==me.id)
+    :G.players.filter(p=>!p.isHuman);
+  const n=G.players.length;
+  opponents.forEach((p,idx)=>{
+    const posIdx=G.online?((p.id-myIdx+n)%n-1):p.id-1;
+    const pos=getOppPos(posIdx,opponents.length);
+    const active=p.id===pi&&(G.online?true:['ai-turn','turn-end'].includes(G.phase));
+    zones[pos]+=oppBoxHTML(p,active&&p.id===pi,pos);
   });
   const topH=zones.top||(zones.topleft||zones.topright
     ?`<div style="display:flex;gap:12px;justify-content:center">${zones.topleft}${zones.topright}</div>`:'');
@@ -1007,7 +1398,7 @@ function renderOpponents(){
 }
 
 function renderPlayer(){
-  const p=G.players[0];if(!p)return;
+  const p=myPlayer();if(!p)return;
   document.getElementById('player-sum').textContent=`開示カード合計: ${revSum(p)}`;
   const isRevPhase=G.phase==='reveal';
   const isDrawPhase=G.phase==='human-draw';
@@ -1036,17 +1427,27 @@ function renderActions(){
   const a=document.getElementById('action-area');
   let h='';
   if(G.phase==='reveal'){
-    const n=G.selCards.length;
-    h=`<button class="btn btn-ok" onclick="confirmReveal()" ${n!==2?'disabled':''}>${n}/2枚選択 → 開示確定</button>`;
+    if(G.online&&G.revealReady&&G.revealReady[myIdx]){
+      h=`<span style="color:var(--text-dim)">他のプレイヤーの開示を待っています...</span>`;
+    }else{
+      const n=G.selCards.length;
+      h=`<button class="btn btn-ok" onclick="confirmReveal()" ${n!==2?'disabled':''}>${n}/2枚選択 → 開示確定</button>`;
+    }
   }else if(G.phase==='human-action'){
-    h=`<button class="btn btn-draw" onclick="selectDraw()" ${G.deck.length===0?'disabled':''}>① カードを引く</button>
-    <button class="btn btn-trade" onclick="selectTrade()">② カードを交換提案</button>`;
+    if(G.online&&!isMyTurn()){
+      h=`<span style="color:var(--text-dim)">相手のターンを待っています...</span>`;
+    }else{
+      h=`<button class="btn btn-draw" onclick="selectDraw()" ${G.deck.length===0?'disabled':''}>① カードを引く</button>
+      <button class="btn btn-trade" onclick="selectTrade()">② カードを交換提案</button>`;
+    }
   }else if(G.phase==='human-draw'){
     h=`<span style="color:#8a7a6a;font-size:.9rem;letter-spacing:.05em">捨てるカードをクリック</span>
     <button class="btn btn-cancel" onclick="cancelDraw()">キャンセル</button>`;
   }
   a.innerHTML=h;
 }
+
+window.addEventListener('load',initSupabase);
 
 </script>
 </body>

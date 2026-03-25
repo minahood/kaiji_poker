@@ -474,3 +474,112 @@ h1 .sub {
   margin-top: 6px;
   letter-spacing: 0.08em;
 }
+
+/* ===================== ONLINE SCREENS ===================== */
+#online-screen, #wait-screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin-top: 36px;
+  padding: 0 16px;
+}
+
+.text-input {
+  background: transparent;
+  border: 1px solid var(--gold-dim);
+  color: var(--text);
+  padding: 10px 16px;
+  border-radius: 3px;
+  font-family: inherit;
+  font-size: 1rem;
+  text-align: center;
+  letter-spacing: 0.1em;
+  width: 100%;
+  max-width: 280px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.text-input:focus { border-color: var(--gold); }
+
+.code-input {
+  letter-spacing: 0.4em;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  max-width: 180px;
+}
+
+.online-section-title {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  letter-spacing: 0.2em;
+  margin-top: 8px;
+}
+
+.online-lead {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+
+.pc-divider {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  letter-spacing: 0.15em;
+  margin: 4px 0;
+}
+
+.pc-btn-online {
+  background: linear-gradient(135deg, rgba(201,168,76,0.12), rgba(201,168,76,0.06));
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.pc-btn-online:hover {
+  background: var(--gold);
+  color: #0a0a0a;
+}
+.pc-btn-online span { color: inherit; }
+
+.pc-btn-text {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  padding: 6px 12px;
+  transition: color 0.2s;
+}
+.pc-btn-text:hover { color: var(--text); }
+
+.wait-code-display {
+  font-size: 2.4rem;
+  font-weight: 900;
+  color: var(--gold);
+  letter-spacing: 0.5em;
+  text-shadow: 0 0 24px rgba(201,168,76,0.5);
+  padding: 10px 0;
+}
+
+.wait-players {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 60px;
+  align-items: center;
+}
+
+.wait-player {
+  font-size: 0.88rem;
+  color: var(--text);
+  letter-spacing: 0.1em;
+}
+
+.wait-msg {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  margin: 0;
+}

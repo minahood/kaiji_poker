@@ -13,14 +13,41 @@
 
 <h1>カイジポーカー<span class="sub">KAIJI POKER</span></h1>
 
+<!-- スタート画面 -->
 <div id="start-screen">
   <p>プレイヤー人数を選んでください（あなた＋AI）</p>
   <button class="pc-btn" onclick="startGame(2)"><span>2人（AI 1人）</span></button>
   <button class="pc-btn" onclick="startGame(3)"><span>3人（AI 2人）</span></button>
   <button class="pc-btn" onclick="startGame(4)"><span>4人（AI 3人）</span></button>
   <button class="pc-btn" onclick="startGame(5)"><span>5人（AI 4人）</span></button>
+  <div class="pc-divider">── または ──</div>
+  <button class="pc-btn pc-btn-online" onclick="showOnlineScreen()"><span>オンライン対戦</span></button>
 </div>
 
+<!-- オンライン入室画面 -->
+<div id="online-screen">
+  <p class="online-lead">名前を入力してください</p>
+  <input id="player-name" class="text-input" placeholder="プレイヤー名（最大8文字）" maxlength="8">
+  <div class="online-section-title">ルームを作成する</div>
+  <button class="pc-btn pc-btn-online" onclick="createRoom()"><span>ルーム作成</span></button>
+  <div class="online-section-title">ルームに参加する</div>
+  <input id="room-code-input" class="text-input code-input" placeholder="4文字のコード" maxlength="4">
+  <button class="pc-btn" onclick="joinRoomByInput()"><span>参加する</span></button>
+  <button class="pc-btn-text" onclick="showStartScreen()">← 戻る</button>
+</div>
+
+<!-- 待機画面 -->
+<div id="wait-screen">
+  <p class="online-lead">ルームコード</p>
+  <div id="wait-code" class="wait-code-display">----</div>
+  <p class="online-lead" style="font-size:.8rem">このコードを相手に教えてください</p>
+  <div id="wait-players" class="wait-players"></div>
+  <button id="start-btn" class="pc-btn pc-btn-online" onclick="startOnlineGame()" style="display:none"><span>ゲーム開始</span></button>
+  <p id="wait-msg" class="wait-msg">他のプレイヤーを待っています...</p>
+  <button class="pc-btn-text" onclick="showStartScreen()">← 退室</button>
+</div>
+
+<!-- ゲームボード -->
 <div id="game-board">
   <div id="top-zone"></div>
   <div id="middle-zone">
@@ -42,6 +69,7 @@
   <div id="action-area"></div>
 </div>
 
+<!-- トレードモーダル -->
 <div id="modal-bg">
   <div id="modal">
     <h2 id="modal-title">カード交換</h2>
@@ -49,10 +77,12 @@
   </div>
 </div>
 
+<!-- ショーダウン -->
 <div id="sd-bg">
   <div id="sd"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="game.js"></script>
 </body>
 </html>
