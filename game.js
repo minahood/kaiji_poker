@@ -69,7 +69,7 @@ function checkIncomingTrade(){
   const mb=document.getElementById('modal-bg');
   if(ts.phase==='pending'&&G.playerIds[ts.targetIdx]===myPlayerId
     &&(!mb||!mb.classList.contains('on'))){
-    showIncoming(ts.proposerIdx,ts.offeredCards);
+    showIncoming(ts.proposerIdx,ts.offeredCards,ts.targetIdx);
   }
   if(ts.phase==='accepted'&&G.playerIds[ts.proposerIdx]===myPlayerId){
     execOnlineTrade();
@@ -451,8 +451,8 @@ function execOnlineTrade(){
 function tradeEnd(){closeModal();G.phase='turn-end';G.msg='提案が拒否されました。';render();setTimeout(endTurn,1200);}
 
 // ===================== INCOMING TRADE (AI→human) =====================
-function showIncoming(pi,cards){
-  G.tradeState={phase:'incoming',proposerIdx:pi,offeredCards:cards,giveIdx:[]};
+function showIncoming(pi,cards,targetIdx){
+  G.tradeState={phase:'incoming',proposerIdx:pi,targetIdx:targetIdx??myIdx,offeredCards:cards,giveIdx:[]};
   const pname=G.players[pi].name;
   openModal(`${pname} からの交換提案`);
   let ch=cards.map(c=>c.revealed?cardHTML(c):`<div class="card sm back"></div>`).join('');

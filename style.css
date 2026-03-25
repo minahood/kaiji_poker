@@ -173,7 +173,7 @@ h1 .sub {
   text-align: center;
   letter-spacing: 0.12em;
 }
-#player-hand { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+#player-hand { display: flex; flex-direction: column; gap: 6px; align-items: center; padding-bottom: 20px; }
 #player-sum  { text-align: center; margin-top: 6px; font-size: 0.78rem; color: var(--gold); }
 
 /* === OPPONENTS === */
@@ -329,8 +329,24 @@ h1 .sub {
 
 .card.sel {
   border-color: var(--gold) !important;
-  box-shadow: 0 0 16px rgba(201,168,76,0.65), 2px 4px 8px rgba(0,0,0,0.5) !important;
-  transform: translateY(-8px);
+  border-width: 2.5px !important;
+  background: rgba(201,168,76,0.13) !important;
+  box-shadow: 0 0 22px rgba(201,168,76,0.85), 0 0 6px rgba(201,168,76,0.4) inset, 2px 4px 8px rgba(0,0,0,0.5) !important;
+  transform: translateY(-12px);
+  outline: 1.5px solid rgba(201,168,76,0.45);
+  outline-offset: 3px;
+}
+.card.sel::after {
+  content: '選択中';
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .card.click { cursor: pointer; }
