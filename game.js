@@ -179,7 +179,7 @@ const VD={2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',
 
 const CARDS_URL='https://bpefqgeiicomijaysxhu.supabase.co/storage/v1/object/public/cards';
 function cardImgURL(suit,value){
-  const s={spades:'スペード',hearts:'ハート',diamonds:'ダイヤ',clubs:'クラブ'}[suit];
+  const s={spades:'spade',hearts:'heart',diamonds:'dia',clubs:'club'}[suit];
   const n=value===14?1:value;
   return`${CARDS_URL}/${s}_${n}.png`;
 }
