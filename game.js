@@ -1,7 +1,7 @@
 // ===================== SUPABASE =====================
 const SUPABASE_URL='https://bpefqgeiicomijaysxhu.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJwZWZxZ2VpaWNvbWlqYXlzeGh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MjY1MjEsImV4cCI6MjA5MDAwMjUyMX0.MYxA8lsQMBI3Yc5ZcMu35rEOnf5pdZ0BoP0xuMT2gg4';
-let supabaseClient=null,myPlayerId=null,myIdx=0,myName='あなた';
+let supabaseClient=null,myPlayerId=null,myIdx=0,myName='あなた',roomChannel=null;
 
 function initSupabase(){
   if(typeof window.supabase==='undefined')return;
@@ -26,7 +26,8 @@ async function pushState(){
 
 function subscribeRoom(code){
   if(!supabaseClient)return;
-  supabaseClient.channel(`room-${code}`)
+  roomChannel=supabaseClient.channel(`room-${code}`);
+  roomChannel
     .on('postgres_changes',
       {event:'UPDATE',schema:'public',table:'rooms',filter:`code=eq.${code}`},
       (payload)=>{
@@ -41,7 +42,25 @@ function subscribeRoom(code){
         if(G.tradeState)checkIncomingTrade();
         render();
       }
-    ).subscribe();
+    )
+    .on('presence',{event:'leave'},({leftPresences})=>{
+      if(!G.playerIds||G.phase!=='waiting')return;
+      leftPresences.forEach(pr=>{
+        const idx=G.playerIds.indexOf(pr.playerId);
+        if(idx<0)return;
+        G.players.splice(idx,1);
+        G.playerIds.splice(idx,1);
+        G.revealReady.splice(idx,1);
+        // IDを詰め直す
+        G.players.forEach((p,i)=>{p.id=i;});
+        myIdx=G.playerIds.indexOf(myPlayerId);
+        if(myIdx===0)pushState();
+        updateWaitScreen();
+      });
+    })
+    .subscribe(async(status)=>{
+      if(status==='SUBSCRIBED')await roomChannel.track({playerId:myPlayerId});
+    });
 }
 
 function checkIncomingTrade(){
@@ -775,3 +794,4 @@ function renderActions(){
 }
 
 window.addEventListener('load',initSupabase);
+window.addEventListener('beforeunload',()=>{if(roomChannel)roomChannel.untrack();});
