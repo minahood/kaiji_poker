@@ -31,7 +31,9 @@ function subscribeRoom(code){
     .on('postgres_changes',
       {event:'UPDATE',schema:'public',table:'rooms',filter:`code=eq.${code}`},
       (payload)=>{
+        const localSel=[...G.selCards||[]];
         G=payload.new.state;
+        G.selCards=localSel;
         myIdx=G.playerIds?G.playerIds.indexOf(myPlayerId):0;
         updateWaitScreen();
         const ws=document.getElementById('wait-screen');
@@ -250,9 +252,10 @@ function clickReveal(i){
 async function confirmReveal(){
   if(G.selCards.length!==2)return;
   if(G.online){
-    // Read latest state first to avoid lost-update race
+    const savedSel=[...G.selCards];
     const {data}=await supabaseClient.from('rooms').select('state').eq('code',G.roomCode).single();
     if(data){G=data.state;myIdx=G.playerIds.indexOf(myPlayerId);}
+    G.selCards=savedSel;
   }
   G.selCards.forEach(i=>{myPlayer().hand[i].revealed=true;});
   G.selCards=[];
