@@ -175,21 +175,25 @@ const SYM={spades:'♠',hearts:'♥',diamonds:'♦',clubs:'♣'};
 const COL={spades:'blk',hearts:'red',diamonds:'red',clubs:'blk'};
 const VD={2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A'};
 
+const CARDS_URL='https://bpefqgeiicomijaysxhu.supabase.co/storage/v1/object/public/cards';
+function cardImgURL(suit,value){
+  const s={spades:'spade',hearts:'heart',diamonds:'dia',clubs:'club'}[suit];
+  const n=value===14?1:value;
+  return`${CARDS_URL}/${s}${n}.png`;
+}
+
 // ===================== STATE =====================
 let G={};
 
 function cardHTML(c,opts={}){
   if(!c||opts.back)return`<div class="card sm back ${opts.extra||''}"></div>`;
-  const col=COL[c.suit];
   const rev=c.revealed?' rev':'';
   const sel=opts.sel?' sel':'';
   const clk=opts.click?' click':'';
   const sz=opts.sm?' sm':'';
   const fn=opts.fn?` onclick="${opts.fn}(${opts.idx})"`:''
-  return`<div class="card ${col}${rev}${sel}${clk}${sz}"${fn}>
-    <div class="cn">${VD[c.value]}<br>${SYM[c.suit]}</div>
-    <div class="cc">${SYM[c.suit]}</div>
-    <div class="cn" style="align-self:flex-end;transform:rotate(180deg)">${VD[c.value]}<br>${SYM[c.suit]}</div>
+  return`<div class="card${rev}${sel}${clk}${sz}"${fn}>
+    <img src="${cardImgURL(c.suit,c.value)}" class="card-img" alt="${VD[c.value]}${SYM[c.suit]}" draggable="false">
   </div>`;
 }
 
