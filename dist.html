@@ -300,7 +300,7 @@ h1 .sub {
 /* === CARDS === */
 .card {
   width: 62px;
-  height: 90px;
+  height: 87px;
   border-radius: 8px;
   border: 1.5px solid #c8c0b0;
   display: flex;
@@ -328,7 +328,7 @@ h1 .sub {
   from { opacity: 0; transform: translateY(-10px) scale(0.92); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
-.card.sm { width: 50px; height: 72px; }
+.card.sm { width: 50px; height: 71px; }
 
 .card.back {
   background:
@@ -877,9 +877,9 @@ const VD={2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',
 
 const CARDS_URL='https://bpefqgeiicomijaysxhu.supabase.co/storage/v1/object/public/cards';
 function cardImgURL(suit,value){
-  const s={spades:'spade',hearts:'heart',diamonds:'dia',clubs:'club'}[suit];
+  const s={spades:'スペード',hearts:'ハート',diamonds:'ダイヤ',clubs:'クラブ'}[suit];
   const n=value===14?1:value;
-  return`${CARDS_URL}/${s}${n}.png`;
+  return`${CARDS_URL}/${s}_${n}.png`;
 }
 
 // ===================== STATE =====================
