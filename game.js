@@ -196,12 +196,11 @@ const CARDS_URL='https://bpefqgeiicomijaysxhu.supabase.co/storage/v1/object/publ
 const CHIPS_URL='https://bpefqgeiicomijaysxhu.supabase.co/storage/v1/object/public/chips/chip_red.png';
 const CHIPS_LB_URL='https://bpefqgeiicomijaysxhu.supabase.co/storage/v1/object/public/chips/chip_lightblue.png';
 function chipDisp(n){
+  const lb=Math.floor(n/10);
+  const red=n%10;
   let h='';
-  for(let i=0;i<n;i++){
-    if(i>0&&i%10===0)h+='<br>';
-    const url=(i+1)%10===0?CHIPS_LB_URL:CHIPS_URL;
-    h+=`<img src="${url}" class="chip-img" alt="チップ">`;
-  }
+  for(let i=0;i<lb;i++)h+=`<img src="${CHIPS_LB_URL}" class="chip-img" alt="チップ×10">`;
+  for(let i=0;i<red;i++)h+=`<img src="${CHIPS_URL}" class="chip-img" alt="チップ">`;
   return h;
 }
 function cardImgURL(suit,value){
