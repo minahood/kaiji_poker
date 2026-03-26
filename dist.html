@@ -166,6 +166,13 @@ h1 .sub {
   font-size: 0.72rem;
   color: var(--text-dim);
 }
+#pot-info {
+  font-size: 0.78rem;
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  min-height: 1.2em;
+}
 
 /* === PLAYER AREA === */
 #player-zone { display: flex; justify-content: center; padding: 0 4px; }
@@ -200,8 +207,9 @@ h1 .sub {
   border-color: var(--gold);
   box-shadow: 0 0 20px rgba(201,168,76,0.35);
 }
-.opp-name { font-size: 0.78rem; color: var(--text-dim); margin-bottom: 2px; letter-spacing: 0.06em; }
-.opp-sum  { font-size: 0.68rem; color: var(--gold); margin-bottom: 4px; }
+.opp-name  { font-size: 0.78rem; color: var(--text-dim); margin-bottom: 2px; letter-spacing: 0.06em; }
+.opp-sum   { font-size: 0.68rem; color: var(--gold); margin-bottom: 2px; }
+.opp-coins { font-size: 0.68rem; color: var(--gold-dim); margin-bottom: 4px; }
 
 /* === CARD ROWS === */
 .hand-row { display: flex; gap: 4px; justify-content: center; align-items: flex-end; min-height: 20px; }
@@ -295,6 +303,43 @@ h1 .sub {
 .btn-reject:hover:not(:disabled) {
   background: rgba(139,0,0,0.15);
   box-shadow: 0 0 14px rgba(139,0,0,0.3);
+}
+
+.btn-raise {
+  background: rgba(201,168,76,0.15);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.btn-raise:hover:not(:disabled) {
+  background: rgba(201,168,76,0.3);
+  box-shadow: 0 0 14px rgba(201,168,76,0.35);
+}
+
+.raise-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 0;
+}
+.raise-amt {
+  width: 64px;
+  background: transparent;
+  border: 1px solid var(--gold-dim);
+  color: var(--text);
+  padding: 8px 8px;
+  border-radius: 3px;
+  font-size: 0.88rem;
+  font-family: inherit;
+  text-align: center;
+  outline: none;
+}
+.raise-amt:focus { border-color: var(--gold); }
+
+.sd-coins {
+  font-size: 0.72rem;
+  color: var(--gold-dim);
+  font-weight: 400;
+  margin-left: 6px;
 }
 
 /* === CARDS === */
@@ -674,6 +719,7 @@ h1 .sub {
       <div id="msg">ゲームを開始してください</div>
       <div id="turn-info"></div>
       <div id="deck-info"></div>
+      <div id="pot-info"></div>
     </div>
     <div id="right-zone"></div>
   </div>
@@ -748,8 +794,14 @@ function subscribeRoom(code){
         if(G.tradeState)checkIncomingTrade();
         const gb=document.getElementById('game-board');
         if(gb)gb.classList.add('no-anim');
+        // Close showdown if new round started
+        const sdBg=document.getElementById('sd-bg');
+        if(G.phase==='reveal'&&sdBg&&sdBg.classList.contains('on'))sdBg.classList.remove('on');
         render();
-        setTimeout(()=>{if(gb)gb.classList.remove('no-anim');},0);
+        setTimeout(()=>{
+          if(gb)gb.classList.remove('no-anim');
+          if(G.phase==='showdown'&&sdBg&&!sdBg.classList.contains('on'))doShowdown();
+        },0);
       }
     )
     .on('presence',{event:'leave'},({leftPresences})=>{
@@ -867,9 +919,14 @@ async function joinRoomByInput(){
 async function startOnlineGame(){
   if(myIdx!==0){alert('ホストのみ開始できます');return;}
   const deck=shuffle(mkDeck());
-  G.players.forEach(p=>{p.hand=deck.splice(0,5).map(c=>({...c}));});
+  const n=G.players.length;
+  G.players.forEach(p=>{
+    if(p.coins===undefined)p.coins=7;
+    p.coins=Math.max(0,p.coins-1);
+    p.hand=deck.splice(0,5).map(c=>({...c}));
+  });
   G.deck=deck;G.phase='reveal';G.turnOrder=[];G.curPos=0;
-  G.turnsDone=0;G.selCards=[];G.tradeState=null;
+  G.turnsDone=0;G.pot=n;G.selCards=[];G.tradeState=null;G.bettingState=null;
   G.revealReady=G.players.map(()=>false);
   G.msg='手札から2枚クリックして開示するカードを選んでください';
   await pushState();
@@ -934,16 +991,20 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random
 function startGame(n){
   myIdx=0;
   const names=['あなた','カズヤ','リョウ','ハル','ユキ'];
+  const players=Array.from({length:n},(_,i)=>({id:i,name:names[i],isHuman:i===0,hand:[],coins:7}));
+  players.forEach(p=>p.coins-=1);
   G={
     online:false,
     phase:'reveal',
-    players:Array.from({length:n},(_,i)=>({id:i,name:names[i],isHuman:i===0,hand:[]})),
+    players,
     deck:shuffle(mkDeck()),
     turnOrder:[],
     curPos:0,
     turnsDone:0,
+    pot:n,
     selCards:[],
     tradeState:null,
+    bettingState:null,
     msg:''
   };
   G.players.forEach(p=>{p.hand=G.deck.splice(0,5).map(c=>({...c}));});
@@ -1009,7 +1070,7 @@ async function confirmReveal(){
 function curPlayerIdx(){return G.turnOrder[G.curPos%G.turnOrder.length];}
 
 function nextTurn(){
-  if(G.turnsDone>=G.players.length*2){doShowdown();return;}
+  if(G.turnsDone>=G.players.length*2){startBetting();return;}
   const pi=curPlayerIdx();
   const p=G.players[pi];
   const r=Math.floor(G.turnsDone/G.players.length)+1;
@@ -1035,8 +1096,7 @@ function endTurn(){
   G.turnsDone++;G.curPos++;G.selCards=[];G.tradeState=null;
   if(G.online){
     if(G.turnsDone>=G.players.length*2){
-      G.phase='showdown';
-      pushState().then(()=>doShowdown());
+      startBetting();
     }else{
       const pi=curPlayerIdx();
       const r=Math.floor(G.turnsDone/G.players.length)+1;
@@ -1060,6 +1120,8 @@ function selectDraw(){
 function clickDiscard(i){
   flyOutCards([i]);
   const p=myPlayer();
+  const round=Math.floor(G.turnsDone/G.players.length)+1;
+  if(round===2){p.coins=Math.max(0,(p.coins||0)-1);G.pot=(G.pot||0)+1;}
   const was=p.hand[i].revealed;
   p.hand.splice(i,1);
   const nc=G.deck.shift();nc.revealed=was;
@@ -1327,6 +1389,8 @@ function aiTurn(pi){
   const oneAway=aiIsOneAway(p.hand);
   // フラッシュ/ストレート1枚差なら必ずドロー、それ以外は70%でドロー
   if(G.deck.length>0&&(oneAway||Math.random()<0.7)){
+    const round=Math.floor(G.turnsDone/G.players.length)+1;
+    if(round===2){p.coins=Math.max(0,(p.coins||0)-1);G.pot=(G.pot||0)+1;}
     const was=p.hand[discIdx].revealed;
     p.hand.splice(discIdx,1);
     const nc=G.deck.shift();nc.revealed=was;p.hand.push(nc);
@@ -1400,20 +1464,41 @@ function cmpHands(a,b){
 function doShowdown(){
   G.phase='showdown';
   if(G.online)pushState();
-  const res=G.players.map(p=>({p,e:evalHand(p.hand)}));
+  // Distribute pot to winner(s)
+  const foldedIdx=G.bettingState?G.bettingState.foldedIdx:[];
+  const activePlayers=G.players.filter(p=>!foldedIdx.includes(p.id));
+  const evalPlayers=activePlayers.length>1?activePlayers:G.players;
+  const res=evalPlayers.map(p=>({p,e:evalHand(p.hand)}));
   res.sort((a,b)=>cmpHands(b.e,a.e));
   const top=res[0];
   const winners=res.filter(r=>cmpHands(r.e,top.e)===0);
+  const potWon=G.pot||0;
+  const share=Math.floor(potWon/winners.length);
+  winners.forEach(w=>{w.p.coins=(w.p.coins||0)+share;});
+  if(potWon%winners.length>0)winners[0].p.coins++;
+  G.pot=0;
   const wtxt=winners.length>1?`引き分け！（${winners.map(w=>w.p.name).join('・')}）`:`${top.p.name} の勝利！`;
   let h=`<h2>${wtxt}</h2>`;
+  h+=`<div style="text-align:center;color:var(--gold-dim);font-size:0.85rem;margin-bottom:14px">ポット ${potWon}コインを獲得</div>`;
   res.forEach((r,idx)=>{
     const isW=winners.some(w=>w.p.id===r.p.id);
     let ch=r.p.hand.map(c=>cardHTML(c)).join('');
     h+=`<div class="sdp${isW?' win':''}" style="animation-delay:${idx*0.15}s">
-    <div class="sdp-name">${r.p.name}${isW?' ◆':''}</div>
+    <div class="sdp-name">${r.p.name}${isW?' ◆':''} <span class="sd-coins">${r.p.coins}コイン</span></div>
     <div class="mc">${ch}</div><div class="sdp-role">${r.e.name}</div></div>`;
   });
-  h+=`<button class="btn btn-ok" onclick="restart()" style="margin-top:20px">もう一度プレイ</button>`;
+  if(!G.online){
+    const stillIn=G.players.filter(p=>(p.coins||0)>0);
+    if(stillIn.length<=1){
+      const gw=stillIn[0];
+      h+=`<div style="text-align:center;font-size:1.1rem;color:var(--gold);margin:16px 0">${gw?gw.name+'の完全勝利！':'引き分け'}</div>`;
+      h+=`<button class="btn btn-ok" onclick="restart()" style="margin-top:12px">タイトルへ戻る</button>`;
+    }else{
+      h+=`<button class="btn btn-ok" onclick="startNextRound()" style="margin-top:20px">次のゲームへ</button>`;
+    }
+  }else{
+    h+=`<button class="btn btn-ok" onclick="restart()" style="margin-top:20px">終了</button>`;
+  }
   document.getElementById('sd').innerHTML=h;
   document.getElementById('sd-bg').classList.add('on');
 }
@@ -1425,6 +1510,120 @@ function restart(){
   G={};myIdx=0;
   const ss=document.getElementById('start-screen');
   ss.style.display='flex';ss.style.flexDirection='column';
+}
+
+function startNextRound(){
+  document.getElementById('sd-bg').classList.remove('on');
+  // Eliminate 0-coin players
+  G.players=G.players.filter(p=>(p.coins||0)>0);
+  if(G.players.length<=1){
+    const gw=G.players[0];
+    G.phase='game-over';G.msg=gw?`${gw.name}の完全勝利！`:'引き分け';
+    render();return;
+  }
+  // Re-index
+  G.players.forEach((p,i)=>{p.id=i;if(!G.online)p.isHuman=(i===0);});
+  myIdx=G.online?G.playerIds.indexOf(myPlayerId):0;
+  // Ante
+  G.pot=0;
+  G.players.forEach(p=>{const ante=Math.min(1,(p.coins||0));p.coins=(p.coins||0)-ante;G.pot+=ante;});
+  // Re-deal
+  const deck=shuffle(mkDeck());
+  G.players.forEach(p=>{p.hand=deck.splice(0,5).map(c=>({...c,revealed:false}));});
+  G.deck=deck;G.phase='reveal';G.turnOrder=[];G.curPos=0;
+  G.turnsDone=0;G.selCards=[];G.tradeState=null;G.bettingState=null;
+  G.revealReady=G.players.map(()=>false);
+  G.msg='手札から2枚クリックして開示するカードを選んでください';
+  if(G.online)pushState();
+  render();
+}
+
+// ===================== BETTING =====================
+function startBetting(){
+  G.bettingState={phase:'betting',order:[...G.turnOrder],pos:0,currentBet:0,foldedIdx:[],calledIdx:[]};
+  G.phase='betting';
+  G.msg='ベッティングラウンド';
+  if(G.online){pushState();}
+  else{advanceBetting();}
+}
+
+function advanceBetting(){
+  const bs=G.bettingState;
+  // Skip folded players
+  let safety=0;
+  while(bs.foldedIdx.includes(bs.order[bs.pos%bs.order.length])&&safety++<bs.order.length){bs.pos++;}
+  const active=bs.order.filter(i=>!bs.foldedIdx.includes(i));
+  if(active.length<=1||isRoundComplete()){endBetting();return;}
+  const pi=bs.order[bs.pos%bs.order.length];
+  G.msg=`${G.players[pi].name} のベット番です`;
+  render();
+  if(!G.players[pi].isHuman){setTimeout(()=>aiBettingTurn(pi),800);}
+}
+
+function isRoundComplete(){
+  const bs=G.bettingState;
+  const active=bs.order.filter(i=>!bs.foldedIdx.includes(i));
+  return active.every(i=>bs.calledIdx.includes(i));
+}
+
+function bettingCheck(){processBetAction(myIdx,'check');}
+function bettingCall(){processBetAction(myIdx,'call');}
+function bettingFold(){processBetAction(myIdx,'fold');}
+function bettingRaise(){
+  const amt=parseInt(document.getElementById('raise-input')?.value)||1;
+  processBetAction(myIdx,'raise',amt);
+}
+
+function processBetAction(pi,action,amount=0){
+  const bs=G.bettingState;
+  const p=G.players[pi];
+  if(action==='check'){
+    bs.calledIdx.push(pi);
+  }else if(action==='call'){
+    const pay=Math.min(bs.currentBet,(p.coins||0));
+    p.coins=(p.coins||0)-pay;G.pot=(G.pot||0)+pay;
+    bs.calledIdx.push(pi);
+  }else if(action==='raise'){
+    const active=bs.order.filter(i=>!bs.foldedIdx.includes(i));
+    const maxRaise=Math.max(...active.map(i=>(G.players[i].coins||0)));
+    const raise=Math.min(Math.max(1,amount),maxRaise);
+    const pay=Math.min(raise,(p.coins||0));
+    p.coins=(p.coins||0)-pay;G.pot=(G.pot||0)+pay;
+    bs.currentBet=raise;
+    bs.calledIdx=[pi];
+  }else if(action==='fold'){
+    bs.foldedIdx.push(pi);
+    bs.calledIdx.push(pi);
+  }
+  bs.pos++;
+  // Skip folded for next pos
+  let safety=0;
+  while(bs.foldedIdx.includes(bs.order[bs.pos%bs.order.length])&&safety++<bs.order.length){bs.pos++;}
+  const active=bs.order.filter(i=>!bs.foldedIdx.includes(i));
+  if(active.length<=1||isRoundComplete()){
+    endBetting();
+    if(G.online)pushState();
+    return;
+  }
+  if(G.online){
+    const nextPi=bs.order[bs.pos%bs.order.length];
+    G.msg=`${G.players[nextPi].name} のベット番です`;
+    pushState().then(()=>render());
+  }else{
+    advanceBetting();
+  }
+}
+
+function aiBettingTurn(pi){
+  const bs=G.bettingState;
+  if(bs.currentBet===0){processBetAction(pi,'check');}
+  else if((G.players[pi].coins||0)<=0){processBetAction(pi,'fold');}
+  else{processBetAction(pi,'call');}
+}
+
+function endBetting(){
+  G.bettingState.phase='done';
+  doShowdown();
 }
 
 // ===================== POSITION =====================
@@ -1453,9 +1652,12 @@ function render(){
   const pn=pi>=0?G.players[pi].name:'';
   document.getElementById('turn-info').textContent=
     G.phase==='reveal'?'── 開示フェーズ ──':
+    G.phase==='betting'?'── ベッティングラウンド ──':
     G.phase==='showdown'?'':
     `ラウンド ${r}/2　│　${pn} のターン`;
   document.getElementById('deck-info').textContent=`山札: ${G.deck?G.deck.length:0}枚`;
+  const potEl=document.getElementById('pot-info');
+  if(potEl)potEl.textContent=(G.pot||0)>0?`ポット: ${G.pot}コイン`:'';
 }
 
 function oppBoxHTML(p,active,pos){
@@ -1465,9 +1667,11 @@ function oppBoxHTML(p,active,pos){
   const rH=rev.map(c=>cardHTML(c,{sm:true})).join('');
   const cards=`<div class="hand-row rev-row">${rH}</div>
     <div class="hand-row">${nrH}</div>`;
+  const coinsDisp=p.coins!==undefined?`<div class="opp-coins">💰${p.coins}</div>`:'';
   return`<div class="opp-box pos-${pos}${active?' active':''}">
     <div class="opp-name">${p.name}</div>
     <div class="opp-sum">${revSum(p)}</div>
+    ${coinsDisp}
     ${cards}
   </div>`;
 }
@@ -1496,7 +1700,8 @@ function renderOpponents(){
 
 function renderPlayer(){
   const p=myPlayer();if(!p)return;
-  document.getElementById('player-sum').textContent=`開示カード合計: ${revSum(p)}`;
+  const coinsStr=p.coins!==undefined?`　／　コイン: ${p.coins}枚`:'';
+  document.getElementById('player-sum').textContent=`開示カード合計: ${revSum(p)}${coinsStr}`;
   const isRevPhase=G.phase==='reveal';
   const isDrawPhase=G.phase==='human-draw';
   let row1='',row2='';
@@ -1539,8 +1744,31 @@ function renderActions(){
     if(G.online&&!isMyTurn()){
       h=`<span style="color:var(--text-dim)">相手のターンを待っています...</span>`;
     }else{
-      h=`<button class="btn btn-draw" onclick="selectDraw()" ${G.deck.length===0?'disabled':''}>① カードを引く</button>
+      const round=Math.floor(G.turnsDone/G.players.length)+1;
+      const cantDraw=G.deck.length===0||(round===2&&(myPlayer().coins||0)<=0);
+      const drawLabel=round===2?'① カードを引く (-1コイン)':'① カードを引く';
+      h=`<button class="btn btn-draw" onclick="selectDraw()" ${cantDraw?'disabled':''}>${drawLabel}</button>
       <button class="btn btn-trade" onclick="selectTrade()">② カードを交換提案</button>`;
+    }
+  }else if(G.phase==='betting'){
+    const bs=G.bettingState;
+    const pi=bs.order[bs.pos%bs.order.length];
+    if(G.online&&G.playerIds[pi]!==myPlayerId){
+      h=`<span style="color:var(--text-dim)">相手のベットを待っています...</span>`;
+    }else if(!G.online&&!G.players[pi].isHuman){
+      h=`<span style="color:var(--text-dim)">${G.players[pi].name} が考えています...</span>`;
+    }else{
+      const p=myPlayer();
+      const active=bs.order.filter(i=>!bs.foldedIdx.includes(i));
+      const maxRaise=active.length>0?Math.max(...active.map(i=>(G.players[i].coins||0))):0;
+      h=`<button class="btn btn-cancel" onclick="bettingFold()">フォールド</button>
+      ${bs.currentBet===0
+        ?`<button class="btn btn-ok" onclick="bettingCheck()">チェック</button>`
+        :`<button class="btn btn-ok" onclick="bettingCall()" ${(p.coins||0)>0?'':'disabled'}>コール (${Math.min(bs.currentBet,(p.coins||0))}コイン)</button>`}
+      <div class="raise-ctrl">
+        <input id="raise-input" type="number" class="raise-amt" min="1" max="${maxRaise}" value="1">
+        <button class="btn btn-raise" onclick="bettingRaise()" ${maxRaise>0?'':'disabled'}>レイズ</button>
+      </div>`;
     }
   }else if(G.phase==='human-draw'){
     h=`<span style="color:#8a7a6a;font-size:.9rem;letter-spacing:.05em">捨てるカードをクリック</span>
