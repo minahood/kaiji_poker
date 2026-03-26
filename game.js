@@ -362,8 +362,21 @@ function endTurn(){
 // ===================== DRAW =====================
 function selectDraw(){
   if(G.deck.length===0){G.msg='山札が空です。トレードを選んでください。';render();return;}
+  G.phase='human-draw-pick';
+  G.msg='交換枚数を選んでください。';
+  render();
+}
+
+function selectDraw1(){
   G.phase='human-draw';
   G.msg='捨てるカードをクリックしてください。';
+  render();
+}
+
+function selectDraw2(){
+  G.selDiscard=[];
+  G.phase='human-draw2';
+  G.msg='捨てる開示カードを2枚クリックしてください。';
   render();
 }
 
@@ -383,7 +396,32 @@ function clickDiscard(i){
   else{render();setTimeout(endTurn,1400);}
 }
 
-function cancelDraw(){G.phase='human-action';G.msg='あなたのターンです。行動を選んでください。';render();}
+function clickDiscard2(i){
+  const x=(G.selDiscard||[]).indexOf(i);
+  if(x>=0)G.selDiscard.splice(x,1);
+  else if((G.selDiscard||[]).length<2)G.selDiscard.push(i);
+  render();
+}
+
+function confirmDiscard2(){
+  if(!G.selDiscard||G.selDiscard.length!==2)return;
+  const p=myPlayer();
+  const round=Math.floor(G.turnsDone/G.players.length)+1;
+  if(round===2){p.coins=Math.max(0,(p.coins||0)-2);G.pot=(G.pot||0)+2;}
+  flyOutCards(G.selDiscard);
+  [...G.selDiscard].sort((a,b)=>b-a).forEach(i=>p.hand.splice(i,1));
+  const nc1=G.deck.shift();nc1.revealed=true;
+  const nc2=G.deck.shift();nc2.revealed=true;
+  p.hand.push(nc1);p.hand.push(nc2);
+  pendingDealIn=[p.hand.length-2,p.hand.length-1];
+  G.selDiscard=[];
+  G.msg='開示カード2枚を交換しました。';
+  G.phase='turn-end';
+  if(G.online){pushState().then(()=>{render();setTimeout(endTurn,1400);});}
+  else{render();setTimeout(endTurn,1400);}
+}
+
+function cancelDraw(){G.selDiscard=[];G.phase='human-action';G.msg='あなたのターンです。行動を選んでください。';render();}
 
 // ===================== TRADE (human→AI) =====================
 function selectTrade(){
@@ -637,9 +675,21 @@ function aiTurn(pi){
   const p=G.players[pi];
   const discIdx=aiPickDiscard(p.hand);
   const oneAway=aiIsOneAway(p.hand);
+  const round=Math.floor(G.turnsDone/G.players.length)+1;
+  const revIdxs=p.hand.map((c,i)=>({c,i})).filter(x=>x.c.revealed).map(x=>x.i);
+  const can2draw=G.deck.length>=2&&revIdxs.length>=2&&(round!==2||(p.coins||0)>=2);
+  // 開示カード2枚が低値なら2枚交換（30%、1枚差完成中は使わない）
+  if(can2draw&&!oneAway&&Math.random()<0.3){
+    if(round===2){p.coins=Math.max(0,(p.coins||0)-2);G.pot=(G.pot||0)+2;}
+    const toDiscard=revIdxs.slice(0,2).sort((a,b)=>b-a);
+    toDiscard.forEach(i=>p.hand.splice(i,1));
+    const nc1=G.deck.shift();nc1.revealed=true;
+    const nc2=G.deck.shift();nc2.revealed=true;
+    p.hand.push(nc1);p.hand.push(nc2);
+    G.msg=`${p.name} が開示カード2枚を交換しました。`;G.phase='turn-end';render();
+    setTimeout(endTurn,900);
   // フラッシュ/ストレート1枚差なら必ずドロー、それ以外は70%でドロー
-  if(G.deck.length>0&&(oneAway||Math.random()<0.7)){
-    const round=Math.floor(G.turnsDone/G.players.length)+1;
+  }else if(G.deck.length>0&&(oneAway||Math.random()<0.7)){
     if(round===2){p.coins=Math.max(0,(p.coins||0)-1);G.pot=(G.pot||0)+1;}
     const was=p.hand[discIdx].revealed;
     p.hand.splice(discIdx,1);
@@ -711,6 +761,10 @@ function cmpHands(a,b){
 }
 
 // ===================== SHOWDOWN =====================
+const SUIT_STR={spades:4,hearts:3,diamonds:2,clubs:1};
+function sortedHandHTML(hand){
+  return[...hand].sort((a,b)=>a.value-b.value||SUIT_STR[b.suit]-SUIT_STR[a.suit]).map(c=>cardHTML(c)).join('');
+}
 function doShowdown(){
   G.phase='showdown';
   if(G.online)pushState();
@@ -732,7 +786,7 @@ function doShowdown(){
   h+=`<div style="text-align:center;color:var(--gold-dim);font-size:0.85rem;margin-bottom:14px">ポット ${potWon}コインを獲得</div>`;
   res.forEach((r,idx)=>{
     const isW=winners.some(w=>w.p.id===r.p.id);
-    let ch=r.p.hand.map(c=>cardHTML(c)).join('');
+    let ch=sortedHandHTML(r.p.hand);
     h+=`<div class="sdp${isW?' win':''}" style="animation-delay:${idx*0.15}s">
     <div class="sdp-name">${r.p.name}${isW?' ◆':''} <span class="sd-coins">${r.p.coins}コイン</span></div>
     <div class="mc">${ch}</div><div class="sdp-role">${r.e.name}</div></div>`;
@@ -954,6 +1008,8 @@ function renderPlayer(){
   document.getElementById('player-sum').textContent=`開示カード合計: ${revSum(p)}${coinsStr}`;
   const isRevPhase=G.phase==='reveal';
   const isDrawPhase=G.phase==='human-draw';
+  const isDraw2Phase=G.phase==='human-draw2';
+  const selDiscard=G.selDiscard||[];
   let row1='',row2='';
   if(isRevPhase){
     p.hand.forEach((c,i)=>{
@@ -968,7 +1024,10 @@ function renderPlayer(){
     const nonRev=p.hand.map((c,i)=>({c,i})).filter(x=>!x.c.revealed);
     const rev=p.hand.map((c,i)=>({c,i})).filter(x=>x.c.revealed);
     nonRev.forEach(x=>{row1+=cardHTML(x.c,{click:isDrawPhase,fn:isDrawPhase?'clickDiscard':null,idx:x.i});});
-    rev.forEach(x=>{row2+=cardHTML(x.c,{click:isDrawPhase,fn:isDrawPhase?'clickDiscard':null,idx:x.i});});
+    rev.forEach(x=>{
+      const sel=isDraw2Phase&&selDiscard.includes(x.i);
+      row2+=cardHTML(x.c,{click:isDrawPhase||isDraw2Phase,sel,fn:isDraw2Phase?'clickDiscard2':isDrawPhase?'clickDiscard':null,idx:x.i});
+    });
     document.getElementById('player-hand').innerHTML=
       `<div class="hand-row rev-row">${row2}</div>`+
       `<div class="hand-row">${row1||'<span style="font-size:.75rem;color:#555">（なし）</span>'}</div>`;
@@ -1020,8 +1079,23 @@ function renderActions(){
         <button class="btn btn-raise" onclick="bettingRaise()" ${maxRaise>0?'':'disabled'}>レイズ</button>
       </div>`;
     }
+  }else if(G.phase==='human-draw-pick'){
+    const round=Math.floor(G.turnsDone/G.players.length)+1;
+    const p=myPlayer();
+    const revCount=p.hand.filter(c=>c.revealed).length;
+    const can2=G.deck.length>=2&&revCount>=2&&(round!==2||(p.coins||0)>=2);
+    const cost2=round===2?' (-2コイン)':'';
+    const cost1=round===2?' (-1コイン)':'';
+    h=`<button class="btn btn-draw" onclick="selectDraw1()">1枚交換${cost1}</button>
+    <button class="btn btn-draw" onclick="selectDraw2()" ${can2?'':'disabled'}>開示2枚交換${cost2}</button>
+    <button class="btn btn-cancel" onclick="cancelDraw()">キャンセル</button>`;
   }else if(G.phase==='human-draw'){
     h=`<span style="color:#8a7a6a;font-size:.9rem;letter-spacing:.05em">捨てるカードをクリック</span>
+    <button class="btn btn-cancel" onclick="cancelDraw()">キャンセル</button>`;
+  }else if(G.phase==='human-draw2'){
+    const n=(G.selDiscard||[]).length;
+    h=`<span style="color:#8a7a6a;font-size:.9rem">開示カードを${n}/2枚選択中</span>
+    <button class="btn btn-ok" onclick="confirmDiscard2()" ${n===2?'':'disabled'}>交換する</button>
     <button class="btn btn-cancel" onclick="cancelDraw()">キャンセル</button>`;
   }
   a.innerHTML=h;
