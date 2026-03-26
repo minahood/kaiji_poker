@@ -127,7 +127,7 @@ function updateWaitScreen(){
 
 async function createRoom(){
   if(!supabaseClient){alert('Supabase未接続');return;}
-  myName=(document.getElementById('player-name').value.trim()||'プレイヤー1').slice(0,8);
+  myName=(document.getElementById('player-name').value.trim()||'ルームマスター').slice(0,8);
   const code=(Math.random().toString(36).slice(2,6)).toUpperCase();
   const state={online:true,roomCode:code,phase:'waiting',
     players:[{id:0,name:myName,isHuman:true,hand:[]}],
@@ -142,7 +142,6 @@ async function createRoom(){
 
 async function joinRoomByInput(){
   if(!supabaseClient){alert('Supabase未接続');return;}
-  myName=(document.getElementById('player-name').value.trim()||'プレイヤー?').slice(0,8);
   const code=(document.getElementById('room-code-input').value.trim()).toUpperCase();
   if(code.length!==4){alert('4文字のコードを入力してください');return;}
   const {data,error}=await supabaseClient.from('rooms').select('state').eq('code',code).single();
@@ -151,6 +150,7 @@ async function joinRoomByInput(){
   if(st.phase!=='waiting'){alert('このルームはすでにゲーム中です');return;}
   if(st.players.length>=5){alert('満員です（最大5人）');return;}
   const seat=st.players.length;
+  myName=(document.getElementById('player-name').value.trim()||`プレイヤー${seat}`).slice(0,8);
   st.players.push({id:seat,name:myName,isHuman:true,hand:[]});
   st.playerIds.push(myPlayerId);
   st.revealReady.push(false);
