@@ -390,15 +390,17 @@ function renderModal(){
     G.players.filter(p=>G.online?p.id!==myPlayer().id:!p.isHuman).forEach(p=>{
       h+=`<button class="tgt-btn${ts.targetIdx===p.id?' on':''}" onclick="pickTarget(${p.id})">${p.name}</button>`;
     });
-    h+=`</div></div><div class="ms"><label>提示するカード（1枚以上）：</label><div class="mc" id="mc"></div></div>`;
+    h+=`</div></div><div class="ms"><label>提示するカード（1枚以上）：</label><div class="incoming-hand" id="mc"></div></div>`;
     h+=`<div class="mb"><button class="btn btn-ok" id="prop-btn" onclick="proposeToAI()" ${(!ts.targetIdx&&ts.targetIdx!==0)||ts.offerIdx.length===0?'disabled':''}>提案する</button>
     <button class="btn btn-cancel" onclick="cancelModal()">キャンセル</button></div>`;
     mb.innerHTML=h;
-    let ch='';
+    let row1='',row2='';
     myPlayer().hand.forEach((c,i)=>{
-      ch+=cardHTML(c,{click:true,sel:ts.offerIdx.includes(i),fn:'toggleOffer',idx:i});
+      const h=cardHTML(c,{click:true,sel:ts.offerIdx.includes(i),fn:'toggleOffer',idx:i});
+      if(c.revealed)row2+=h;else row1+=h;
     });
-    document.getElementById('mc').innerHTML=ch;
+    document.getElementById('mc').innerHTML=
+      `<div class="hand-row rev-row">${row2}</div><div class="hand-row">${row1}</div>`;
   }else if(ts.phase==='deciding'){
     mb.innerHTML=`<p style="text-align:center;font-size:1.1rem">${G.players[ts.targetIdx].name} が考えています...</p>`;
   }else if(ts.phase==='rejected'){
