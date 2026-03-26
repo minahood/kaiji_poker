@@ -357,6 +357,25 @@ h1 .sub {
   flex-shrink: 0;
 }
 
+#room-ctrl {
+  display: flex;
+  justify-content: center;
+  padding: 4px 8px 8px;
+}
+.btn-disband {
+  background: transparent;
+  border-color: #3a1a1a;
+  color: #6a3a3a;
+  font-size: 0.72rem;
+  padding: 5px 14px;
+  letter-spacing: 0.08em;
+}
+.btn-disband:hover:not(:disabled) {
+  border-color: var(--red);
+  color: #c06060;
+  background: rgba(139,0,0,0.1);
+}
+
 /* === CARDS === */
 .card {
   width: 62px;
@@ -746,6 +765,7 @@ h1 .sub {
     </div>
   </div>
   <div id="action-area"></div>
+  <div id="room-ctrl"></div>
 </div>
 
 <!-- トレードモーダル -->
@@ -800,6 +820,7 @@ function subscribeRoom(code){
         G=payload.new.state;
         G.selCards=localSel;
         myIdx=G.playerIds?G.playerIds.indexOf(myPlayerId):0;
+        if(G.phase==='disbanded'){showStartScreen();return;}
         updateWaitScreen();
         const ws=document.getElementById('wait-screen');
         if(G.phase!=='waiting'&&ws&&ws.style.display!=='none'){
@@ -1610,6 +1631,17 @@ function restart(){
   ss.style.display='flex';ss.style.flexDirection='column';
 }
 
+function disbandRoom(){
+  if(!confirm('ルームを解散しますか？'))return;
+  if(G.online){
+    G.phase='disbanded';
+    G.msg='ルームマスターがゲームを解散しました。';
+    pushState().then(()=>showStartScreen());
+  }else{
+    showStartScreen();
+  }
+}
+
 function startNextRound(){
   document.getElementById('sd-bg').classList.remove('on');
   // Eliminate 0-coin players
@@ -1756,6 +1788,9 @@ function render(){
   document.getElementById('deck-info').textContent=`山札: ${G.deck?G.deck.length:0}枚`;
   const potEl=document.getElementById('pot-info');
   if(potEl)potEl.textContent=(G.pot||0)>0?`ポット: ${G.pot}コイン`:'';
+  const rc=document.getElementById('room-ctrl');
+  if(rc)rc.innerHTML=myIdx===0?`<button class="btn btn-disband" onclick="disbandRoom()">ルームを解散</button>`:'';
+}
 }
 
 function oppBoxHTML(p,active,pos){
