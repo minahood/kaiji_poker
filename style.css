@@ -199,7 +199,7 @@ h1 .sub {
 }
 .opp-name  { font-size: 0.78rem; color: var(--text-dim); margin-bottom: 2px; letter-spacing: 0.06em; }
 .opp-sum   { font-size: 0.68rem; color: var(--gold); margin-bottom: 2px; }
-.opp-coins { font-size: 0.68rem; color: var(--gold-dim); margin-bottom: 4px; }
+.opp-chips { font-size: 0.68rem; color: var(--gold-dim); margin-bottom: 4px; }
 
 /* === CARD ROWS === */
 .hand-row { display: flex; gap: 4px; justify-content: center; align-items: flex-end; min-height: 20px; }
@@ -325,7 +325,7 @@ h1 .sub {
 }
 .raise-amt:focus { border-color: var(--gold); }
 
-.sd-coins {
+.sd-chips {
   font-size: 0.72rem;
   color: var(--gold-dim);
   font-weight: 400;
