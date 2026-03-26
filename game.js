@@ -189,6 +189,7 @@ function cardImgURL(suit,value){
 
 // ===================== STATE =====================
 let G={};
+let pendingDealIn=[];
 
 function cardHTML(c,opts={}){
   if(!c||opts.back)return`<div class="card sm back ${opts.extra||''}"></div>`;
@@ -197,9 +198,24 @@ function cardHTML(c,opts={}){
   const clk=opts.click?' click':'';
   const sz=opts.sm?' sm':'';
   const fn=opts.fn?` onclick="${opts.fn}(${opts.idx})"`:''
-  return`<div class="card${rev}${sel}${clk}${sz}"${fn}>
+  const hidx=opts.idx!==undefined?` data-hidx="${opts.idx}"`:''
+  return`<div class="card${rev}${sel}${clk}${sz}"${fn}${hidx}>
     <img src="${cardImgURL(c.suit,c.value)}" class="card-img" alt="${VD[c.value]}${SYM[c.suit]}" draggable="false">
   </div>`;
+}
+
+function flyOutCards(hidxList){
+  const ph=document.getElementById('player-hand');
+  if(!ph)return;
+  hidxList.forEach(hidx=>{
+    const el=ph.querySelector(`[data-hidx="${hidx}"]`);
+    if(!el)return;
+    const r=el.getBoundingClientRect();
+    const cl=el.cloneNode(true);
+    cl.style.cssText=`position:fixed;left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;margin:0;pointer-events:none;z-index:9999;animation:dealOut 0.3s ease-in both`;
+    document.body.appendChild(cl);
+    setTimeout(()=>cl.remove(),350);
+  });
 }
 
 // ===================== DECK =====================
@@ -338,11 +354,13 @@ function selectDraw(){
 }
 
 function clickDiscard(i){
+  flyOutCards([i]);
   const p=myPlayer();
   const was=p.hand[i].revealed;
   p.hand.splice(i,1);
   const nc=G.deck.shift();nc.revealed=was;
   p.hand.push(nc);
+  pendingDealIn=[p.hand.length-1];
   G.msg=was?'開示カードを捨てたため、引いたカードも開示状態になります。':'カードを交換しました。';
   G.phase='turn-end';
   if(G.online){pushState().then(()=>{render();setTimeout(endTurn,1400);});}
@@ -430,6 +448,7 @@ function proposeToAI(){
 
 function execTrade(){
   const ts=G.tradeState;
+  flyOutCards(ts.offerIdx);
   const h=myPlayer(),ai=G.players[ts.targetIdx];
   const hGive=ts.offerIdx.map(i=>({...h.hand[i]}));
   const aGive=ts.aiGive.map(i=>({...ai.hand[i]}));
@@ -437,25 +456,37 @@ function execTrade(){
   [...ts.aiGive].sort((a,b)=>b-a).forEach(i=>ai.hand.splice(i,1));
   aGive.forEach(c=>h.hand.push(c));
   hGive.forEach(c=>ai.hand.push(c));
+  pendingDealIn=Array.from({length:aGive.length},(_,k)=>h.hand.length-aGive.length+k);
   closeModal();G.msg=`${ai.name} とカードを交換しました！`;G.phase='turn-end';render();
   setTimeout(endTurn,1300);
 }
 
 function execOnlineTrade(){
   const ts=G.tradeState;if(!ts||ts.phase!=='accepted')return;
+  const isProposer=G.playerIds[ts.proposerIdx]===myPlayerId;
   const proposer=G.players[ts.proposerIdx];
   const target=G.players[ts.targetIdx];
   const pGive=ts.offeredCards.map(c=>{const nc={...c};delete nc.origIdx;return nc;});
   const tGive=ts.giveCards||[];
+  if(isProposer)flyOutCards(ts.offeredCards.map(c=>c.origIdx));
   const pIdxs=ts.offeredCards.map(c=>c.origIdx).sort((a,b)=>b-a);
   pIdxs.forEach(i=>proposer.hand.splice(i,1));
   const tIdxs=(ts.giveIdx||[]).sort((a,b)=>b-a);
   tIdxs.forEach(i=>target.hand.splice(i,1));
   tGive.forEach(c=>proposer.hand.push(c));
   pGive.forEach(c=>target.hand.push(c));
+  const newIdxs=isProposer&&tGive.length>0
+    ?Array.from({length:tGive.length},(_,k)=>proposer.hand.length-tGive.length+k):[];
   G.tradeState=null;G.msg='カード交換が完了しました！';G.phase='turn-end';
   closeModal();
-  pushState().then(()=>{render();setTimeout(endTurn,1300);});
+  pushState().then(()=>{
+    render();
+    if(newIdxs.length>0){
+      const ph=document.getElementById('player-hand');
+      newIdxs.forEach(hidx=>{const el=ph&&ph.querySelector(`[data-hidx="${hidx}"]`);if(el)el.classList.add('deal-in');});
+    }
+    setTimeout(endTurn,1300);
+  });
 }
 
 function tradeEnd(){closeModal();G.phase='turn-end';G.msg='提案が拒否されました。';render();setTimeout(endTurn,1200);}
@@ -518,6 +549,7 @@ function execIncoming(){
     pushState().then(()=>render());
     return;
   }
+  flyOutCards(ts.giveIdx);
   const h=myPlayer(),ai=G.players[ts.proposerIdx];
   const hGive=ts.giveIdx.map(i=>({...h.hand[i]}));
   const aGive=ts.offeredCards.map(c=>{const nc={...c};delete nc.origIdx;return nc;});
@@ -526,6 +558,7 @@ function execIncoming(){
   aiIdx.forEach(i=>ai.hand.splice(i,1));
   aGive.forEach(c=>h.hand.push(c));
   hGive.forEach(c=>ai.hand.push(c));
+  pendingDealIn=Array.from({length:aGive.length},(_,k)=>h.hand.length-aGive.length+k);
   closeModal();G.msg=`${ai.name} とカードを交換しました！`;G.phase='turn-end';render();
   setTimeout(endTurn,1300);
 }
@@ -776,6 +809,11 @@ function renderPlayer(){
     document.getElementById('player-hand').innerHTML=
       `<div class="hand-row rev-row">${row2}</div>`+
       `<div class="hand-row">${row1||'<span style="font-size:.75rem;color:#555">（なし）</span>'}</div>`;
+  }
+  if(pendingDealIn.length>0){
+    const ph=document.getElementById('player-hand');
+    pendingDealIn.forEach(hidx=>{const el=ph.querySelector(`[data-hidx="${hidx}"]`);if(el)el.classList.add('deal-in');});
+    pendingDealIn=[];
   }
 }
 

@@ -304,8 +304,8 @@ h1 .sub {
   position: relative;
   box-shadow: 2px 4px 10px rgba(0,0,0,0.65);
   transition: transform 0.15s, border-color 0.2s, box-shadow 0.2s;
-  animation: dealIn 0.3s ease-out both;
 }
+.card.deal-in { animation: dealIn 0.3s ease-out both; }
 
 .card-img {
   width: 100%;
@@ -315,8 +315,12 @@ h1 .sub {
   pointer-events: none;
 }
 @keyframes dealIn {
-  from { opacity: 0; transform: translateY(-10px) scale(0.92); }
+  from { opacity: 0; transform: translateY(-30px) scale(0.92); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes dealOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(-40px) scale(0.88); }
 }
 .no-anim .card { animation: none; }
 .card.sm { width: 50px; height: 71px; }
