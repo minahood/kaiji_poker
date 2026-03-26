@@ -194,7 +194,14 @@ const VD={2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',
 
 const CARDS_URL='https://bpefqgeiicomijaysxhu.supabase.co/storage/v1/object/public/cards';
 const CHIPS_URL='https://bpefqgeiicomijaysxhu.supabase.co/storage/v1/object/public/chips/chip_red.png';
-function chipDisp(n){return`<img src="${CHIPS_URL}" class="chip-img" alt="チップ"><b class="chip-count">× ${n}</b>`;}
+function chipDisp(n){
+  let h='';
+  for(let i=0;i<n;i++){
+    if(i>0&&i%10===0)h+='<br>';
+    h+=`<img src="${CHIPS_URL}" class="chip-img" alt="チップ">`;
+  }
+  return h;
+}
 function cardImgURL(suit,value){
   const s={spades:'spade',hearts:'heart',diamonds:'dia',clubs:'club'}[suit];
   const n=value===14?1:value;
@@ -995,7 +1002,8 @@ function render(){
     `ラウンド ${r}/2　│　${pn} のターン`;
   document.getElementById('deck-info').textContent=`山札: ${G.deck?G.deck.length:0}枚`;
   const potEl=document.getElementById('pot-info');
-  if(potEl)potEl.textContent=(G.pot||0)>0?`ポット: ${G.pot}チップ`:'';
+  if(potEl)potEl.innerHTML=(G.pot||0)>0?`<span class="pot-label">ポット</span><br>${chipDisp(G.pot)}`:'';
+
   const rc=document.getElementById('room-ctrl');
   if(rc)rc.innerHTML=myIdx===0?`<button class="btn btn-disband" onclick="disbandRoom()">ルームを解散</button>`:'';
 }
