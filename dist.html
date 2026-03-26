@@ -1887,7 +1887,7 @@ function renderActions(){
       const cantDraw=G.deck.length===0||(round===2&&(myPlayer().chips||0)<=0);
       const drawLabel=round===2?'① カードを引く (-1チップ)':'① カードを引く';
       h=`<button class="btn btn-draw" onclick="selectDraw()" ${cantDraw?'disabled':''}>${drawLabel}</button>
-      <button class="btn btn-trade" onclick="selectTrade()">② カードを交換提案</button>`;
+      <button class="btn btn-trade" onclick="selectTrade()">② カードの交換を提案</button>`;
     }
   }else if(G.phase==='betting'){
     const bs=G.bettingState;
