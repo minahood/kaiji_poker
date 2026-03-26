@@ -494,15 +494,34 @@ function tradeEnd(){closeModal();G.phase='turn-end';G.msg='提案が拒否され
 // ===================== INCOMING TRADE (AI→human) =====================
 function showIncoming(pi,cards,targetIdx){
   G.tradeState={phase:'incoming',proposerIdx:pi,targetIdx:targetIdx??myIdx,offeredCards:cards,giveIdx:[]};
-  const pname=G.players[pi].name;
-  openModal(`${pname} からの交換提案`);
-  let ch=cards.map(c=>c.revealed?cardHTML(c):`<div class="card sm back"></div>`).join('');
+  openModal(`${G.players[pi].name} からの交換提案`);
+  renderIncomingModal();
+}
+
+function renderIncomingModal(){
+  const ts=G.tradeState;
+  const pname=G.players[ts.proposerIdx].name;
+  const n=ts.offeredCards.length;
+  let offered=ts.offeredCards.map(c=>c.revealed?cardHTML(c):`<div class="card sm back"></div>`).join('');
+  const p=myPlayer();
+  let row1='',row2='';
+  p.hand.forEach((c,i)=>{
+    const sel=ts.giveIdx.includes(i);
+    const h=cardHTML(c,{click:true,sel,fn:'toggleGive',idx:i});
+    if(c.revealed)row2+=h;else row1+=h;
+  });
+  const ok=ts.giveIdx.length===n;
   document.getElementById('modal-body').innerHTML=`
-    <div class="ms"><label>${pname} が${cards.length}枚を提示しています：</label><div class="mc">${ch}</div></div>
-    <p style="color:#8a7a6a;font-size:.82rem;text-align:center">承諾すると手札から${cards.length}枚選んで交換します。</p>
+    <div class="ms"><label>${pname} が提示するカード：</label>
+      <div class="mc">${offered}</div></div>
+    <div class="ms"><label>渡すカードを${n}枚選んでください：</label>
+      <div class="incoming-hand">
+        <div class="hand-row rev-row">${row2}</div>
+        <div class="hand-row">${row1}</div>
+      </div></div>
     <div class="mb">
-      <button class="btn btn-accept" onclick="acceptIncoming()">承諾する</button>
-      <button class="btn btn-reject" onclick="rejectIncoming()">拒否する</button>
+      <button class="btn btn-ok" onclick="execIncoming()" ${ok?'':'disabled'}>交換</button>
+      <button class="btn btn-reject" onclick="rejectIncoming()">拒否</button>
     </div>`;
 }
 
@@ -516,28 +535,11 @@ function rejectIncoming(){
   closeModal();G.msg='交換を拒否しました。';G.phase='turn-end';render();setTimeout(endTurn,1200);
 }
 
-function acceptIncoming(){
-  const ts=G.tradeState;ts.phase='incoming-give';
-  document.getElementById('modal-title').textContent='渡すカードを選んでください';
-  renderIncomingGive();
-}
-
-function renderIncomingGive(){
-  const ts=G.tradeState;
-  let ch=myPlayer().hand.map((c,i)=>
-    cardHTML(c,{click:true,sel:ts.giveIdx.includes(i),fn:'toggleGive',idx:i})
-  ).join('');
-  document.getElementById('modal-body').innerHTML=`
-    <p style="color:#8a7a6a;font-size:.85rem;text-align:center;margin-bottom:10px">${ts.offeredCards.length}枚選んでください</p>
-    <div class="mc">${ch}</div>
-    <div class="mb"><button class="btn btn-ok" id="give-btn" onclick="execIncoming()" ${ts.giveIdx.length!==ts.offeredCards.length?'disabled':''}>交換する</button></div>`;
-}
-
 function toggleGive(i){
   const ts=G.tradeState;const x=ts.giveIdx.indexOf(i);
   if(x>=0)ts.giveIdx.splice(x,1);
   else if(ts.giveIdx.length<ts.offeredCards.length)ts.giveIdx.push(i);
-  renderIncomingGive();
+  renderIncomingModal();
 }
 
 function execIncoming(){

@@ -423,6 +423,7 @@ h1 .sub {
 }
 .mc { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin: 8px 0; }
 .mb { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
+.incoming-hand { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 8px 0; }
 
 .tgt-btn {
   padding: 7px 16px;
