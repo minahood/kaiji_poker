@@ -193,6 +193,8 @@ const COL={spades:'blk',hearts:'red',diamonds:'red',clubs:'blk'};
 const VD={2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',13:'K',14:'A'};
 
 const CARDS_URL='https://bpefqgeiicomijaysxhu.supabase.co/storage/v1/object/public/cards';
+const CHIPS_URL='https://bpefqgeiicomijaysxhu.supabase.co/storage/v1/object/public/tips/tip_red.png';
+function chipDisp(n){return`<img src="${CHIPS_URL}" class="chip-img" alt="チップ"> × ${n}`;}
 function cardImgURL(suit,value){
   const s={spades:'spade',hearts:'heart',diamonds:'dia',clubs:'club'}[suit];
   const n=value===14?1:value;
@@ -818,7 +820,7 @@ function doShowdown(){
     const isW=winners.some(w=>w.p.id===r.p.id);
     let ch=sortedHandHTML(r.p.hand,r.e);
     h+=`<div class="sdp${isW?' win':''}" style="animation-delay:${idx*0.15}s">
-    <div class="sdp-name">${r.p.name}${isW?' ◆':''} <span class="sd-chips">${r.p.chips}チップ</span></div>
+    <div class="sdp-name">${r.p.name}${isW?' ◆':''} <span class="sd-chips">${chipDisp(r.p.chips)}</span></div>
     <div class="mc">${ch}</div><div class="sdp-role">${r.e.name}</div></div>`;
   });
   if(!G.online){
@@ -1015,7 +1017,7 @@ function oppBoxHTML(p,active,pos){
   const rH=rev.map(c=>cardHTML(c,{sm:true})).join('');
   const cards=`<div class="hand-row rev-row">${rH}</div>
     <div class="hand-row">${nrH}</div>`;
-  const chipsDisp=p.chips!==undefined?`<div class="opp-chips">💰${p.chips}</div>`:'';
+  const chipsDisp=p.chips!==undefined?`<div class="opp-chips">${chipDisp(p.chips)}</div>`:'';
   return`<div class="opp-box pos-${pos}${active?' active':''}">
     <div class="opp-name">${p.name}</div>
     <div class="opp-sum">${revSum(p)}</div>
@@ -1048,8 +1050,8 @@ function renderOpponents(){
 
 function renderPlayer(){
   const p=myPlayer();if(!p)return;
-  const chipsStr=p.chips!==undefined?`　／　チップ: ${p.chips}枚`:'';
-  document.getElementById('player-sum').textContent=`開示カード合計: ${revSum(p)}${chipsStr}`;
+  const chipsStr=p.chips!==undefined?`　　${chipDisp(p.chips)}`:'';
+  document.getElementById('player-sum').innerHTML=`開示カード合計: ${revSum(p)}${chipsStr}`;
   const isRevPhase=G.phase==='reveal';
   const isDrawPhase=G.phase==='human-draw';
   const isDraw2Phase=G.phase==='human-draw2';
