@@ -1918,7 +1918,7 @@ function renderActions(){
     const cost2=round===2?' (-2チップ)':'';
     const cost1=round===2?' (-1チップ)':'';
     h=`<button class="btn btn-draw" onclick="selectDraw1()">1枚交換${cost1}</button>
-    <button class="btn btn-draw" onclick="selectDraw2()" ${can2?'':'disabled'}>開示2枚交換${cost2}</button>
+    <button class="btn btn-draw" onclick="selectDraw2()" ${can2?'':'disabled'}>開示全交換${cost2}</button>
     <button class="btn btn-cancel" onclick="cancelDraw()">キャンセル</button>`;
   }else if(G.phase==='human-draw'){
     h=`<span style="color:#8a7a6a;font-size:.9rem;letter-spacing:.05em">捨てるカードをクリック</span>
