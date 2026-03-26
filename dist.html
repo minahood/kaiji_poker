@@ -328,6 +328,7 @@ h1 .sub {
   from { opacity: 0; transform: translateY(-10px) scale(0.92); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
+.no-anim .card { animation: none; }
 .card.sm { width: 50px; height: 71px; }
 
 .card.back {
@@ -740,7 +741,10 @@ function subscribeRoom(code){
           document.getElementById('game-board').style.display='flex';
         }
         if(G.tradeState)checkIncomingTrade();
+        const gb=document.getElementById('game-board');
+        if(gb)gb.classList.add('no-anim');
         render();
+        setTimeout(()=>{if(gb)gb.classList.remove('no-anim');},0);
       }
     )
     .on('presence',{event:'leave'},({leftPresences})=>{

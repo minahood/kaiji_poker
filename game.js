@@ -42,7 +42,10 @@ function subscribeRoom(code){
           document.getElementById('game-board').style.display='flex';
         }
         if(G.tradeState)checkIncomingTrade();
+        const gb=document.getElementById('game-board');
+        if(gb)gb.classList.add('no-anim');
         render();
+        setTimeout(()=>{if(gb)gb.classList.remove('no-anim');},0);
       }
     )
     .on('presence',{event:'leave'},({leftPresences})=>{
