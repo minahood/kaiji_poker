@@ -1040,8 +1040,7 @@ function renderOpponents(){
 
 function renderPlayer(){
   const p=myPlayer();if(!p)return;
-  const chipsStr=p.chips!==undefined?`　　${chipDisp(p.chips)}`:'';
-  document.getElementById('player-sum').innerHTML=`開示カード合計: ${revSum(p)}${chipsStr}`;
+  document.getElementById('player-sum').innerHTML=p.chips!==undefined?chipDisp(p.chips):'';
   const isRevPhase=G.phase==='reveal';
   const isDrawPhase=G.phase==='human-draw';
   const isDraw2Phase=G.phase==='human-draw2';
