@@ -1794,7 +1794,6 @@ function render(){
   const rc=document.getElementById('room-ctrl');
   if(rc)rc.innerHTML=myIdx===0?`<button class="btn btn-disband" onclick="disbandRoom()">ルームを解散</button>`:'';
 }
-}
 
 function oppBoxHTML(p,active,pos){
   const nonRev=p.hand.filter(c=>!c.revealed);
