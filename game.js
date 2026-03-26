@@ -194,11 +194,13 @@ const VD={2:'2',3:'3',4:'4',5:'5',6:'6',7:'7',8:'8',9:'9',10:'10',11:'J',12:'Q',
 
 const CARDS_URL='https://bpefqgeiicomijaysxhu.supabase.co/storage/v1/object/public/cards';
 const CHIPS_URL='https://bpefqgeiicomijaysxhu.supabase.co/storage/v1/object/public/chips/chip_red.png';
+const CHIPS_LB_URL='https://bpefqgeiicomijaysxhu.supabase.co/storage/v1/object/public/chips/chip_lightblue.png';
 function chipDisp(n){
   let h='';
   for(let i=0;i<n;i++){
     if(i>0&&i%10===0)h+='<br>';
-    h+=`<img src="${CHIPS_URL}" class="chip-img" alt="チップ">`;
+    const url=(i+1)%10===0?CHIPS_LB_URL:CHIPS_URL;
+    h+=`<img src="${url}" class="chip-img" alt="チップ">`;
   }
   return h;
 }
