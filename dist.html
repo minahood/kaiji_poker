@@ -342,6 +342,21 @@ h1 .sub {
   margin-left: 6px;
 }
 
+.card.kicker {
+  width: 50px;
+  height: 70px;
+  opacity: 0.55;
+}
+
+.kicker-sep {
+  display: inline-block;
+  width: 1px;
+  align-self: stretch;
+  background: rgba(201,168,76,0.25);
+  margin: 0 5px;
+  flex-shrink: 0;
+}
+
 /* === CARDS === */
 .card {
   width: 62px;
@@ -958,9 +973,10 @@ function cardHTML(c,opts={}){
   const sel=opts.sel?' sel':'';
   const clk=opts.click?' click':'';
   const sz=opts.sm?' sm':'';
+  const extra=opts.extra?` ${opts.extra}`:'';
   const fn=opts.fn?` onclick="${opts.fn}(${opts.idx})"`:''
   const hidx=opts.idx!==undefined?` data-hidx="${opts.idx}"`:''
-  return`<div class="card${rev}${sel}${clk}${sz}"${fn}${hidx}>
+  return`<div class="card${rev}${sel}${clk}${sz}${extra}"${fn}${hidx}>
     <img src="${cardImgURL(c.suit,c.value)}" class="card-img" alt="${VD[c.value]}${SYM[c.suit]}" draggable="false">
   </div>`;
 }
@@ -1501,7 +1517,28 @@ function evalHand(cards){
   else if(g[0]===2){rank=1;name='ワンペア';}
   else{rank=0;name='ハイカード';}
   const tb=grp.flatMap(x=>Array(x.c).fill(x.v));
-  return{rank,name,tb};
+  // Determine which card indices form the ranked combination
+  let keyIdx;
+  if(rank>=4){
+    keyIdx=[0,1,2,3,4];
+  }else if(rank===7){// four of a kind
+    const kv=grp[0].v;
+    keyIdx=cards.map((c,i)=>c.value===kv?i:-1).filter(i=>i>=0);
+  }else if(rank===3){// three of a kind
+    const kv=grp[0].v;
+    keyIdx=cards.map((c,i)=>c.value===kv?i:-1).filter(i=>i>=0);
+  }else if(rank===2){// two pair
+    const kv1=grp[0].v,kv2=grp[1].v;
+    keyIdx=cards.map((c,i)=>(c.value===kv1||c.value===kv2)?i:-1).filter(i=>i>=0);
+  }else if(rank===1){// one pair
+    const kv=grp[0].v;
+    keyIdx=cards.map((c,i)=>c.value===kv?i:-1).filter(i=>i>=0);
+  }else{// high card: just the top card
+    const kv=grp[0].v;
+    const idx=cards.map((c,i)=>c.value===kv?i:-1).filter(i=>i>=0);
+    keyIdx=[idx[0]];
+  }
+  return{rank,name,tb,keyIdx};
 }
 
 function cmpHands(a,b){
@@ -1512,8 +1549,15 @@ function cmpHands(a,b){
 
 // ===================== SHOWDOWN =====================
 const SUIT_STR={spades:4,hearts:3,diamonds:2,clubs:1};
-function sortedHandHTML(hand){
-  return[...hand].sort((a,b)=>a.value-b.value||SUIT_STR[b.suit]-SUIT_STR[a.suit]).map(c=>cardHTML(c)).join('');
+function sortedHandHTML(hand,e){
+  const sortFn=(a,b)=>a.c.value-b.c.value||SUIT_STR[b.c.suit]-SUIT_STR[a.c.suit];
+  const ki=e&&e.keyIdx?e.keyIdx:[];
+  const key=hand.map((c,i)=>({c,i})).filter(x=>ki.includes(x.i));
+  const kick=hand.map((c,i)=>({c,i})).filter(x=>!ki.includes(x.i));
+  key.sort(sortFn);kick.sort(sortFn);
+  const keyH=key.map(x=>cardHTML(x.c)).join('');
+  const kickH=kick.map(x=>cardHTML(x.c,{extra:'kicker'})).join('');
+  return keyH+(kick.length>0?`<span class="kicker-sep"></span>${kickH}`:'');
 }
 function doShowdown(){
   G.phase='showdown';
@@ -1536,7 +1580,7 @@ function doShowdown(){
   h+=`<div style="text-align:center;color:var(--gold-dim);font-size:0.85rem;margin-bottom:14px">ポット ${potWon}コインを獲得</div>`;
   res.forEach((r,idx)=>{
     const isW=winners.some(w=>w.p.id===r.p.id);
-    let ch=sortedHandHTML(r.p.hand);
+    let ch=sortedHandHTML(r.p.hand,r.e);
     h+=`<div class="sdp${isW?' win':''}" style="animation-delay:${idx*0.15}s">
     <div class="sdp-name">${r.p.name}${isW?' ◆':''} <span class="sd-coins">${r.p.coins}コイン</span></div>
     <div class="mc">${ch}</div><div class="sdp-role">${r.e.name}</div></div>`;
