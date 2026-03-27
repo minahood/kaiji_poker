@@ -1065,7 +1065,7 @@ function oppBoxHTML(p,active,pos){
   const extraCls=(isTrade&&!isSelected?' trade-selectable':'')+(isSelected?' trade-selected':'');
   return`<div class="opp-box pos-${pos}${active?' active':''}${extraCls}"${clickAttr}>
     <div class="opp-name">${p.name}</div>
-    <div class="opp-sum">${p.chips!==undefined?p.chips+'チップ':''}</div>
+    <div class="opp-sum">${p.chips!==undefined?p.chips:''}</div>
     ${chipsDisp}
     ${logDisp}
     ${cards}
