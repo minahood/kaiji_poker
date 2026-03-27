@@ -923,7 +923,7 @@ function startNextRound(){
 
 // ===================== BETTING =====================
 function startBetting(){
-  G.bettingState={phase:'betting',order:[...G.turnOrder],pos:0,currentBet:0,foldedIdx:[],calledIdx:[]};
+  G.bettingState={phase:'betting',order:[...G.turnOrder],pos:0,currentBet:0,foldedIdx:[],calledIdx:[],log:[]};
   G.phase='betting';
   G.msg='ベッティングラウンド';
   if(G.online){pushState();}
@@ -960,13 +960,16 @@ function bettingRaise(){
 function processBetAction(pi,action,amount=0){
   const bs=G.bettingState;
   const p=G.players[pi];
+  if(!bs.log)bs.log=[];
   if(action==='check'){
     bs.calledIdx.push(pi);
+    bs.log.push({pi,action:'check'});
   }else if(action==='call'){
     const pay=Math.min(bs.currentBet,(p.chips||0));
     if(!p.chipLog)p.chipLog=[];p.chipLog.push({amount:pay,desc:`コール`});
     p.chips=(p.chips||0)-pay;G.pot=(G.pot||0)+pay;
     bs.calledIdx.push(pi);
+    bs.log.push({pi,action:'call',amount:pay});
   }else if(action==='raise'){
     const active=bs.order.filter(i=>!bs.foldedIdx.includes(i));
     const others=active.filter(i=>i!==pi);
@@ -978,9 +981,11 @@ function processBetAction(pi,action,amount=0){
     p.chips=(p.chips||0)-pay;G.pot=(G.pot||0)+pay;
     bs.currentBet=raise;
     bs.calledIdx=[pi];
+    bs.log.push({pi,action:'raise',amount:pay});
   }else if(action==='fold'){
     bs.foldedIdx.push(pi);
     bs.calledIdx.push(pi);
+    bs.log.push({pi,action:'fold'});
   }
   bs.pos++;
   // Skip folded for next pos
@@ -1062,6 +1067,46 @@ function render(){
 
   const rc=document.getElementById('room-ctrl');
   if(rc)rc.innerHTML=myIdx===0?`<button class="btn btn-disband" onclick="disbandRoom()">ルームを解散</button>`:'';
+
+  const blEl=document.getElementById('bet-log');
+  if(blEl)blEl.innerHTML=renderBetLog();
+}
+
+function renderBetLog(){
+  if(G.phase!=='betting'||!G.bettingState)return'';
+  const bs=G.bettingState;
+  const curPi=bs.order[bs.pos%bs.order.length];
+  const ACTION={check:'チェック',call:'コール',raise:'レイズ',fold:'フォールド'};
+  const COLOR={check:'#8a9a8a',call:'#8ab4d8',raise:'#d8a84c',fold:'#888'};
+
+  // 各プレイヤーの最新アクションを収集（後のものが上書き）
+  const latest={};
+  (bs.log||[]).forEach(e=>{latest[e.pi]=e;});
+
+  let h='<div class="bet-log-box">';
+  bs.order.forEach(pi=>{
+    const p=G.players[pi];
+    const e=latest[pi];
+    const isCur=pi===curPi&&!bs.foldedIdx.includes(pi)&&!isRoundComplete();
+    let label,color;
+    if(e){
+      label=ACTION[e.action]+(e.amount?` ${e.amount}`:'')+( e.action==='raise'?'チップ':e.action==='call'?'チップ':'');
+      color=COLOR[e.action];
+    }else{
+      label=isCur?'考え中…':'待機中';
+      color=isCur?'#c9a84c':'#555';
+    }
+    const you=pi===myIdx?' (あなた)':'';
+    h+=`<div class="bet-log-row${bs.foldedIdx.includes(pi)?' bl-fold':''}">
+      <span class="bl-name">${p.name}${you}</span>
+      <span class="bl-action" style="color:${color}">${label}</span>
+    </div>`;
+  });
+  if(bs.currentBet>0){
+    h+=`<div class="bl-current-bet">現在のベット: ${bs.currentBet}チップ</div>`;
+  }
+  h+='</div>';
+  return h;
 }
 
 function oppBoxHTML(p,active,pos){
