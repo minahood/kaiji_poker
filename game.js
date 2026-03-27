@@ -429,12 +429,19 @@ function cancelDraw(){G.selDiscard=[];G.phase='human-action';G.msg='あなたの
 
 // ===================== TRADE (human→AI) =====================
 function selectTrade(){
-  G.phase='human-trade';
-  const me=myPlayer();
   const opponents=orderedOpponents();
   const autoTarget=opponents.length===1?opponents[0].id:null;
-  G.tradeState={phase:'pick',targetIdx:autoTarget,offerIdx:[]};
-  openModal('カード交換の提案');renderModal();
+  G.tradeState={targetIdx:autoTarget,offerIdx:[]};
+  G.phase=autoTarget!==null?'human-trade-pick':'human-trade-target';
+  render();
+}
+function pickTradeTarget(pid){
+  G.tradeState.targetIdx=pid;
+  G.phase='human-trade-pick';
+  render();
+}
+function cancelTrade(){
+  G.tradeState=null;G.phase='human-action';G.msg='あなたのターンです。';render();
 }
 function orderedOpponents(){
   const me=myPlayer();
@@ -494,11 +501,10 @@ function renderModal(){
   }
 }
 
-function pickTarget(id){G.tradeState.targetIdx=id;renderModal();}
 function toggleOffer(i){
   const ts=G.tradeState;const x=ts.offerIdx.indexOf(i);
   if(x>=0)ts.offerIdx.splice(x,1);else ts.offerIdx.push(i);
-  renderModal();
+  render();
 }
 function cancelModal(){closeModal();G.tradeState=null;G.phase='human-action';G.msg='あなたのターンです。';render();}
 
@@ -509,19 +515,20 @@ function proposeToAI(){
     G.tradeState={phase:'pending',proposerIdx:myIdx,targetIdx:ts.targetIdx,
       offeredCards:offered,giveIdx:[]};
     G.msg=`${G.players[ts.targetIdx].name} に交換を提案しています...`;
-    closeModal();
+    G.phase='human-trade';
     pushState().then(()=>render());
     return;
   }
-  ts.phase='deciding';renderModal();
+  G.phase='human-trade';ts.phase='deciding';render();
   setTimeout(()=>{
     const ai=G.players[ts.targetIdx];
     const offered=ts.offerIdx.map(i=>myPlayer().hand[i]);
     const accept=aiAccept(ai,offered);
     if(accept){
       ts.aiGive=aiPickGive(ai,ts.offerIdx.length);
-      ts.phase='accepted';renderModal();
-    }else{ts.phase='rejected';renderModal();}
+      ts.phase='accepted';
+    }else{ts.phase='rejected';}
+    render();
   },1400);
 }
 
@@ -536,7 +543,7 @@ function execTrade(){
   aGive.forEach(c=>h.hand.push(c));
   hGive.forEach(c=>ai.hand.push(c));
   pendingDealIn=Array.from({length:aGive.length},(_,k)=>h.hand.length-aGive.length+k);
-  closeModal();G.msg=`${ai.name} とカードを交換しました！`;G.phase='turn-end';render();
+  G.tradeState=null;G.msg=`${ai.name} とカードを交換しました！`;G.phase='turn-end';render();
   setTimeout(endTurn,1300);
 }
 
@@ -557,7 +564,6 @@ function execOnlineTrade(){
   const newIdxs=isProposer&&tGive.length>0
     ?Array.from({length:tGive.length},(_,k)=>proposer.hand.length-tGive.length+k):[];
   G.tradeState=null;G.msg='カード交換が完了しました！';G.phase='turn-end';
-  closeModal();
   pushState().then(()=>{
     render();
     if(newIdxs.length>0){
@@ -568,7 +574,7 @@ function execOnlineTrade(){
   });
 }
 
-function tradeEnd(){closeModal();G.phase='turn-end';G.msg='提案が拒否されました。';render();setTimeout(endTurn,1200);}
+function tradeEnd(){G.tradeState=null;G.phase='turn-end';G.msg='提案が拒否されました。';render();setTimeout(endTurn,1200);}
 
 // ===================== INCOMING TRADE (AI→human) =====================
 function showIncoming(pi,cards,targetIdx){
@@ -1041,7 +1047,11 @@ function oppBoxHTML(p,active,pos){
   const cards=`<div class="hand-row rev-row">${rH}</div>
     <div class="hand-row">${nrH}</div>`;
   const chipsDisp=p.chips!==undefined?`<div class="opp-chips">${chipDisp(p.chips)}</div>`:'';
-  return`<div class="opp-box pos-${pos}${active?' active':''}">
+  const isTgt=G.phase==='human-trade-target';
+  const isSelected=G.phase==='human-trade-pick'&&G.tradeState&&G.tradeState.targetIdx===p.id;
+  const clickAttr=isTgt?` onclick="pickTradeTarget(${p.id})" style="cursor:pointer"`:'';
+  const extraCls=(isTgt?' trade-selectable':'')+(isSelected?' trade-selected':'');
+  return`<div class="opp-box pos-${pos}${active?' active':''}${extraCls}"${clickAttr}>
     <div class="opp-name">${p.name}</div>
     <div class="opp-sum">${revSum(p)}</div>
     ${chipsDisp}
@@ -1077,6 +1087,7 @@ function renderPlayer(){
   const isRevPhase=G.phase==='reveal';
   const isDrawPhase=G.phase==='human-draw';
   const isDraw2Phase=G.phase==='human-draw2';
+  const isTradePickPhase=G.phase==='human-trade-pick';
   let row1='',row2='';
   if(isRevPhase){
     p.hand.forEach((c,i)=>{
@@ -1087,6 +1098,16 @@ function renderPlayer(){
     document.getElementById('player-hand').innerHTML=
       `<div class="hand-row rev-row">${row2}</div>`+
       `<div class="hand-row">${row1}</div>`;
+  }else if(isTradePickPhase){
+    const ts=G.tradeState||{offerIdx:[]};
+    p.hand.forEach((c,i)=>{
+      const sel=ts.offerIdx.includes(i);
+      const h=cardHTML(c,{click:true,sel,fn:'toggleOffer',idx:i});
+      if(c.revealed)row2+=h;else row1+=h;
+    });
+    document.getElementById('player-hand').innerHTML=
+      `<div class="hand-row rev-row">${row2}</div>`+
+      `<div class="hand-row">${row1||'<span style="font-size:.75rem;color:#555">（なし）</span>'}</div>`;
   }else{
     const nonRev=p.hand.map((c,i)=>({c,i})).filter(x=>!x.c.revealed);
     const rev=p.hand.map((c,i)=>({c,i})).filter(x=>x.c.revealed);
@@ -1163,6 +1184,34 @@ function renderActions(){
     h=`<span style="color:#8a7a6a;font-size:.9rem">開示カード${revCount2}枚を全て交換します</span>
     <button class="btn btn-ok" onclick="confirmDiscard2()">交換する</button>
     <button class="btn btn-cancel" onclick="cancelDraw()">キャンセル</button>`;
+  }else if(G.phase==='human-trade-target'){
+    h=`<span style="color:#c9a84c;font-size:.9rem">交換する相手のエリアをクリックして選択してください</span>
+    <button class="btn btn-cancel" onclick="cancelTrade()">キャンセル</button>`;
+  }else if(G.phase==='human-trade-pick'){
+    const n=G.tradeState?G.tradeState.offerIdx.length:0;
+    const tname=G.tradeState&&G.tradeState.targetIdx!==null?G.players[G.tradeState.targetIdx].name:'';
+    h=`<span style="color:#8a7a6a;font-size:.9rem">【${tname}】に提示するカードを選択（${n}枚）</span>
+    <button class="btn btn-ok" onclick="proposeToAI()" ${n>0?'':'disabled'}>提案する</button>
+    <button class="btn btn-cancel" onclick="cancelTrade()">キャンセル</button>`;
+  }else if(G.phase==='human-trade'){
+    const ts=G.tradeState;
+    if(ts){
+      if(ts.phase==='deciding'){
+        h=`<span style="color:var(--text-dim)">${G.players[ts.targetIdx].name} が考えています...</span>`;
+      }else if(ts.phase==='rejected'){
+        h=`<span style="color:#e06060">${G.players[ts.targetIdx].name} に拒否されました。</span>
+        <button class="btn btn-ok" onclick="tradeEnd()">OK</button>`;
+      }else if(ts.phase==='accepted'){
+        const ai=G.players[ts.targetIdx];
+        const ch=ts.aiGive.map(i=>cardHTML(ai.hand[i])).join('');
+        h=`<span style="color:#6abd6a;font-weight:700">${ai.name} が承諾！</span>
+        <span style="font-size:.82rem;color:#8a7a6a">${ai.name} が渡すカード：</span>
+        <div class="mc trade-result-cards">${ch}</div>
+        <button class="btn btn-ok" onclick="execTrade()">交換する</button>`;
+      }else{
+        h=`<span style="color:var(--text-dim)">相手の応答を待っています...</span>`;
+      }
+    }
   }
   a.innerHTML=h;
 }
