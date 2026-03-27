@@ -1948,16 +1948,17 @@ function renderPlayer(){
       `<div class="hand-row">${row1}</div>`;
   }else if(isTradePickPhase){
     const ts=G.tradeState||{offerIdx:[]};
-    p.hand.forEach((c,i)=>{
-      const sel=ts.offerIdx.includes(i);
-      const h=cardHTML(c,{click:true,sel,fn:'toggleOffer',idx:i});
-      if(c.revealed)row2+=h;else row1+=h;
-    });
+    const tradeNonRev=p.hand.map((c,i)=>({c,i})).filter(x=>!x.c.revealed)
+      .sort((a,b)=>a.c.value-b.c.value||SUIT_STR[b.c.suit]-SUIT_STR[a.c.suit]);
+    const tradeRev=p.hand.map((c,i)=>({c,i})).filter(x=>x.c.revealed);
+    tradeRev.forEach(x=>{row2+=cardHTML(x.c,{click:true,sel:ts.offerIdx.includes(x.i),fn:'toggleOffer',idx:x.i});});
+    tradeNonRev.forEach(x=>{row1+=cardHTML(x.c,{click:true,sel:ts.offerIdx.includes(x.i),fn:'toggleOffer',idx:x.i});});
     document.getElementById('player-hand').innerHTML=
       `<div class="hand-row rev-row">${row2}</div>`+
       `<div class="hand-row">${row1||'<span style="font-size:.75rem;color:#555">（なし）</span>'}</div>`;
   }else{
-    const nonRev=p.hand.map((c,i)=>({c,i})).filter(x=>!x.c.revealed);
+    const nonRev=p.hand.map((c,i)=>({c,i})).filter(x=>!x.c.revealed)
+      .sort((a,b)=>a.c.value-b.c.value||SUIT_STR[b.c.suit]-SUIT_STR[a.c.suit]);
     const rev=p.hand.map((c,i)=>({c,i})).filter(x=>x.c.revealed);
     nonRev.forEach(x=>{row1+=cardHTML(x.c,{click:isDrawPhase,fn:isDrawPhase?'clickDiscard':null,idx:x.i});});
     rev.forEach(x=>{
