@@ -617,10 +617,10 @@ function renderIncomingModal(){
   });
   const ok=ts.giveIdx.length===n;
   document.getElementById('modal-body').innerHTML=`
-    <div class="ms"><label>${pname} が提示するカード：</label>
-      <div class="mc">${offered}</div></div>
     ${revCards.length>0?`<div class="ms"><label>${pname} の開示中カード：</label>
       <div class="mc">${revH}</div></div>`:''}
+    <div class="ms"><label>${pname} が提示するカード：</label>
+      <div class="mc">${offered}</div></div>
     <div class="ms"><label>渡すカードを${n}枚選んでください：</label>
       <div class="incoming-hand">
         <div class="hand-row rev-row">${row2}</div>
