@@ -1057,7 +1057,7 @@ function oppBoxHTML(p,active,pos){
   const rH=rev.map(c=>cardHTML(c,{sm:true})).join('');
   const cards=`<div class="hand-row rev-row">${rH}</div>
     <div class="hand-row">${nrH}</div>`;
-  const chipsDisp=p.chips!==undefined?`<div class="opp-chips">${p.chips}</div>`:'';
+  const chipsDisp=p.chips!==undefined?`<div class="opp-chips">${chipDisp(p.chips)}</div>`:'';
   const logDisp=chipLogDisp(p);
   const isTrade=G.phase==='human-trade-select';
   const isSelected=isTrade&&G.tradeState&&G.tradeState.targetIdx===p.id;
