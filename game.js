@@ -1092,7 +1092,41 @@ function render(){
   if(rc)rc.innerHTML=myIdx===0?`<button class="btn btn-disband" onclick="disbandRoom()">ルームを解散</button>`:'';
 
   const blEl=document.getElementById('bet-log');
-  if(blEl)blEl.innerHTML=renderBetLog();
+  if(blEl)blEl.innerHTML=G.phase==='betting'?renderBetLog():renderTradeStatus();
+}
+
+function renderTradeStatus(){
+  const ts=G.tradeState;
+  const ph=G.phase;
+  if(ph==='human-trade-select'&&ts){
+    const n=(ts.offerIdx||[]).length;
+    const tname=ts.targetIdx!==null?G.players[ts.targetIdx].name:'(未選択)';
+    const cardsH=(ts.offerIdx||[]).map(i=>cardHTML(myPlayer().hand[i],{sm:true})).join('');
+    return`<div class="trade-status-box">
+      <div class="ts-title">交換準備中</div>
+      <div class="ts-row"><span class="ts-label">あなた</span><span class="ts-arrow">→</span><span class="ts-name">${tname}</span></div>
+      ${n>0?`<div class="ts-cards">${cardsH}</div>`:'<div class="ts-hint">手札からカードを選択してください</div>'}
+    </div>`;
+  }
+  if((ph==='human-trade'||ph==='turn-end')&&ts&&ts.proposerIdx!==undefined){
+    const proposer=G.players[ts.proposerIdx];
+    const target=G.players[ts.targetIdx];
+    if(!proposer||!target)return'';
+    const cards=ts.offeredCards||(ts.offerIdx||[]).map(i=>myPlayer().hand[i]);
+    const cardsH=cards.map(c=>c.revealed?cardHTML(c,{sm:true}):`<div class="card sm back"></div>`).join('');
+    let statusH='';
+    if(ts.phase==='deciding')statusH=`<span class="ts-status ts-deciding">考えています…</span>`;
+    else if(ts.phase==='accepted')statusH=`<span class="ts-status ts-ok">受諾</span>`;
+    else if(ts.phase==='rejected')statusH=`<span class="ts-status ts-ng">拒否</span>`;
+    else if(ts.phase==='pending')statusH=`<span class="ts-status ts-deciding">提案中…</span>`;
+    else if(ts.phase==='incoming')statusH=`<span class="ts-status ts-deciding">提案中…</span>`;
+    return`<div class="trade-status-box">
+      <div class="ts-title">交換提案</div>
+      <div class="ts-row"><span class="ts-label">${proposer.name}</span><span class="ts-arrow">→</span><span class="ts-name">${target.name}</span>${statusH}</div>
+      <div class="ts-cards">${cardsH}</div>
+    </div>`;
+  }
+  return'';
 }
 
 function renderBetLog(){
