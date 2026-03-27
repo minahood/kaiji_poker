@@ -225,6 +225,11 @@ h1 .sub {
   border-color: var(--gold);
   box-shadow: 0 0 20px rgba(201,168,76,0.35);
 }
+.opp-box.folded,
+#player-area.folded {
+  opacity: 0.38;
+  filter: grayscale(0.6);
+}
 .opp-box.trade-selectable {
   border-color: #6ab4e0;
   box-shadow: 0 0 14px rgba(106,180,224,0.4);

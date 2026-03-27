@@ -1005,7 +1005,11 @@ function aiBettingTurn(pi){
   const bs=G.bettingState;
   if(bs.currentBet===0){processBetAction(pi,'check');}
   else if((G.players[pi].chips||0)<=0){processBetAction(pi,'fold');}
-  else{processBetAction(pi,'call');}
+  else{
+    const handRank=evalHand(G.players[pi].hand).rank;
+    if(handRank<2&&Math.random()<0.8){processBetAction(pi,'fold');}
+    else{processBetAction(pi,'call');}
+  }
 }
 
 function endBetting(){
@@ -1059,10 +1063,11 @@ function oppBoxHTML(p,active,pos){
     <div class="hand-row">${nrH}</div>`;
   const chipsDisp=p.chips!==undefined?`<div class="opp-chips">${chipDisp(p.chips)}</div>`:'';
   const logDisp=chipLogDisp(p);
+  const isFolded=G.bettingState&&G.bettingState.foldedIdx.includes(p.id);
   const isTrade=G.phase==='human-trade-select';
   const isSelected=isTrade&&G.tradeState&&G.tradeState.targetIdx===p.id;
   const clickAttr=isTrade?` onclick="pickTradeTarget(${p.id})" style="cursor:pointer"`:'';
-  const extraCls=(isTrade&&!isSelected?' trade-selectable':'')+(isSelected?' trade-selected':'');
+  const extraCls=(isFolded?' folded':'')+(isTrade&&!isSelected?' trade-selectable':'')+(isSelected?' trade-selected':'');
   return`<div class="opp-box pos-${pos}${active?' active':''}${extraCls}"${clickAttr}>
     <div class="opp-name">${p.name}</div>
     <div class="opp-sum">${p.chips!==undefined?p.chips:''}</div>
@@ -1096,6 +1101,8 @@ function renderOpponents(){
 
 function renderPlayer(){
   const p=myPlayer();if(!p)return;
+  const playerFolded=G.bettingState&&G.bettingState.foldedIdx.includes(myIdx);
+  document.getElementById('player-area').classList.toggle('folded',!!playerFolded);
   document.getElementById('player-sum').innerHTML=p.chips!==undefined?chipDisp(p.chips):'';
   const clEl=document.getElementById('player-chip-log');
   if(clEl)clEl.innerHTML=chipLogDisp(p);
