@@ -185,6 +185,24 @@ h1 .sub {
 }
 #player-hand { display: flex; flex-direction: column; gap: 6px; align-items: center; padding-bottom: 20px; }
 #player-sum  { text-align: center; margin-top: 6px; font-size: 1.1rem; color: var(--gold-dim); }
+#player-chip-log { text-align: center; margin-top: 4px; }
+.chip-log-wrap { display: inline-flex; align-items: center; gap: 2px; cursor: default; }
+.chip-log-label { font-size: 0.62rem; color: var(--text-dim); margin-right: 3px; letter-spacing: 0.05em; }
+#chip-tooltip {
+  display: none;
+  position: absolute;
+  z-index: 9999;
+  background: rgba(20,16,10,0.95);
+  border: 1px solid rgba(201,168,76,0.4);
+  border-radius: 6px;
+  padding: 7px 11px;
+  font-size: 0.75rem;
+  color: #d8c88a;
+  line-height: 1.7;
+  pointer-events: none;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
 
 /* === OPPONENTS === */
 .opp-box {

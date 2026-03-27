@@ -173,7 +173,8 @@ async function startOnlineGame(){
   const n=G.players.length;
   G.players.forEach(p=>{
     if(p.chips===undefined)p.chips=15;
-    p.chips=Math.max(0,p.chips-2);
+    if(!p.chipLog)p.chipLog=[];
+    const ante=Math.min(2,p.chips);p.chips-=ante;p.chipLog.push({amount:ante,desc:'アンティ'});
     p.hand=deck.splice(0,5).map(c=>({...c}));
   });
   G.deck=deck;G.phase='reveal';G.turnOrder=[];G.curPos=0;
@@ -212,6 +213,34 @@ function cardImgURL(suit,value){
 // ===================== STATE =====================
 let G={};
 let pendingDealIn=[];
+
+function spendChip(p,amount,desc){
+  const actual=Math.min(amount,p.chips||0);
+  if(actual<=0)return 0;
+  p.chips=(p.chips||0)-actual;
+  G.pot=(G.pot||0)+actual;
+  if(!p.chipLog)p.chipLog=[];
+  p.chipLog.push({amount:actual,desc});
+  return actual;
+}
+
+function chipLogDisp(p){
+  if(!p.chipLog||p.chipLog.length===0)return '';
+  const total=p.chipLog.reduce((s,e)=>s+e.amount,0);
+  if(total===0)return '';
+  const logLines=p.chipLog.map(e=>`${e.desc}: ${e.amount}チップ`).join('&#10;');
+  return`<div class="chip-log-wrap" onmouseenter="showChipTip(event,'${logLines}')" onmouseleave="hideChipTip()"><span class="chip-log-label">消費</span>${chipDisp(total)}</div>`;
+}
+
+function showChipTip(e,html){
+  const t=document.getElementById('chip-tooltip');
+  t.innerHTML=html.replace(/&#10;/g,'<br>');
+  t.style.display='block';
+  const r=e.currentTarget.getBoundingClientRect();
+  t.style.left=(r.left+window.scrollX)+'px';
+  t.style.top=(r.top+window.scrollY-t.offsetHeight-6)+'px';
+}
+function hideChipTip(){document.getElementById('chip-tooltip').style.display='none';}
 
 function cardHTML(c,opts={}){
   if(!c||opts.back)return`<div class="card sm back ${opts.extra||''}"></div>`;
@@ -253,8 +282,8 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random
 function startGame(n){
   myIdx=0;
   const names=['あなた','カズヤ','リョウ','ハル','ユキ'];
-  const players=Array.from({length:n},(_,i)=>({id:i,name:names[i],isHuman:i===0,hand:[],chips:15}));
-  players.forEach(p=>p.chips-=2);
+  const players=Array.from({length:n},(_,i)=>({id:i,name:names[i],isHuman:i===0,hand:[],chips:15,chipLog:[]}));
+  players.forEach(p=>{p.chips-=2;p.chipLog.push({amount:2,desc:'アンティ'});});
   G={
     online:false,
     phase:'reveal',
@@ -384,7 +413,7 @@ function clickDiscard(i){
   const isRevealed=p.hand[i].revealed;
   if(!isRevealed&&(p.chips||0)<=0){G.msg='チップが不足しているため非開示カードは交換できません。';render();return;}
   flyOutCards([i]);
-  if(!isRevealed){p.chips=Math.max(0,(p.chips||0)-1);G.pot=(G.pot||0)+1;}
+  if(!isRevealed){spendChip(p,1,'山札交換（非開示）');}
   const was=isRevealed;
   p.hand.splice(i,1);
   const nc=G.deck.shift();nc.revealed=was;
@@ -701,7 +730,7 @@ function aiTurn(pi){
   const canDraw=G.deck.length>0&&(discIsRevealed||(p.chips||0)>=1);
   // フラッシュ/ストレート1枚差なら必ずドロー、それ以外は70%でドロー
   if(canDraw&&(oneAway||Math.random()<0.7)){
-    if(!discIsRevealed){p.chips=Math.max(0,(p.chips||0)-1);G.pot=(G.pot||0)+1;}
+    if(!discIsRevealed){spendChip(p,1,'山札交換（非開示）');}
     const was=p.hand[discIdx].revealed;
     p.hand.splice(discIdx,1);
     const nc=G.deck.shift();nc.revealed=was;p.hand.push(nc);
@@ -880,7 +909,7 @@ function startNextRound(){
   myIdx=G.online?G.playerIds.indexOf(myPlayerId):0;
   // Ante
   G.pot=0;
-  G.players.forEach(p=>{const ante=Math.min(2,(p.chips||0));p.chips=(p.chips||0)-ante;G.pot+=ante;});
+  G.players.forEach(p=>{if(!p.chipLog)p.chipLog=[];const ante=Math.min(2,(p.chips||0));p.chips=(p.chips||0)-ante;G.pot+=ante;if(ante>0)p.chipLog.push({amount:ante,desc:'アンティ'});});
   // Re-deal
   const deck=shuffle(mkDeck());
   G.players.forEach(p=>{p.hand=deck.splice(0,5).map(c=>({...c,revealed:false}));});
@@ -935,6 +964,7 @@ function processBetAction(pi,action,amount=0){
     bs.calledIdx.push(pi);
   }else if(action==='call'){
     const pay=Math.min(bs.currentBet,(p.chips||0));
+    if(!p.chipLog)p.chipLog=[];p.chipLog.push({amount:pay,desc:`コール`});
     p.chips=(p.chips||0)-pay;G.pot=(G.pot||0)+pay;
     bs.calledIdx.push(pi);
   }else if(action==='raise'){
@@ -942,6 +972,7 @@ function processBetAction(pi,action,amount=0){
     const maxRaise=Math.max(...active.map(i=>(G.players[i].chips||0)));
     const raise=Math.min(Math.max(1,amount),maxRaise);
     const pay=Math.min(raise,(p.chips||0));
+    if(!p.chipLog)p.chipLog=[];p.chipLog.push({amount:pay,desc:`レイズ`});
     p.chips=(p.chips||0)-pay;G.pot=(G.pot||0)+pay;
     bs.currentBet=raise;
     bs.calledIdx=[pi];
@@ -1025,6 +1056,7 @@ function oppBoxHTML(p,active,pos){
   const cards=`<div class="hand-row rev-row">${rH}</div>
     <div class="hand-row">${nrH}</div>`;
   const chipsDisp=p.chips!==undefined?`<div class="opp-chips">${chipDisp(p.chips)}</div>`:'';
+  const logDisp=chipLogDisp(p);
   const isTgt=G.phase==='human-trade-target';
   const isSelected=G.phase==='human-trade-pick'&&G.tradeState&&G.tradeState.targetIdx===p.id;
   const clickAttr=isTgt?` onclick="pickTradeTarget(${p.id})" style="cursor:pointer"`:'';
@@ -1033,6 +1065,7 @@ function oppBoxHTML(p,active,pos){
     <div class="opp-name">${p.name}</div>
     <div class="opp-sum">${revSum(p)}</div>
     ${chipsDisp}
+    ${logDisp}
     ${cards}
   </div>`;
 }
@@ -1062,6 +1095,8 @@ function renderOpponents(){
 function renderPlayer(){
   const p=myPlayer();if(!p)return;
   document.getElementById('player-sum').innerHTML=p.chips!==undefined?chipDisp(p.chips):'';
+  const clEl=document.getElementById('player-chip-log');
+  if(clEl)clEl.innerHTML=chipLogDisp(p);
   const isRevPhase=G.phase==='reveal';
   const isDrawPhase=G.phase==='human-draw';
   const isDraw2Phase=G.phase==='human-draw2';
