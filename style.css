@@ -341,6 +341,10 @@ h1 .sub {
   height: 70px;
   opacity: 0.55;
 }
+.card.trade-peek {
+  width: 50px;
+  height: 70px;
+}
 
 .kicker-sep {
   display: inline-block;

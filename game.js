@@ -579,9 +579,12 @@ function showIncoming(pi,cards,targetIdx){
 
 function renderIncomingModal(){
   const ts=G.tradeState;
-  const pname=G.players[ts.proposerIdx].name;
+  const proposer=G.players[ts.proposerIdx];
+  const pname=proposer.name;
   const n=ts.offeredCards.length;
   let offered=ts.offeredCards.map(c=>c.revealed?cardHTML(c):`<div class="card sm back"></div>`).join('');
+  const revCards=proposer.hand.filter(c=>c.revealed);
+  const revH=revCards.map(c=>cardHTML(c,{extra:'trade-peek'})).join('');
   const p=myPlayer();
   let row1='',row2='';
   p.hand.forEach((c,i)=>{
@@ -593,6 +596,8 @@ function renderIncomingModal(){
   document.getElementById('modal-body').innerHTML=`
     <div class="ms"><label>${pname} が提示するカード：</label>
       <div class="mc">${offered}</div></div>
+    ${revCards.length>0?`<div class="ms"><label>${pname} の開示中カード：</label>
+      <div class="mc">${revH}</div></div>`:''}
     <div class="ms"><label>渡すカードを${n}枚選んでください：</label>
       <div class="incoming-hand">
         <div class="hand-row rev-row">${row2}</div>
