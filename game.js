@@ -615,7 +615,7 @@ function renderIncomingModal(){
   const proposer=G.players[ts.proposerIdx];
   const pname=proposer.name;
   const n=ts.offeredCards.length;
-  let offered=ts.offeredCards.map(c=>c.revealed?cardHTML(c):`<div class="card sm back"></div>`).join('');
+  let offered=ts.offeredCards.map(c=>c.revealed?cardHTML(c,{sm:true}):`<div class="card sm back"></div>`).join('');
   const revCards=proposer.hand.filter(c=>c.revealed);
   const revH=revCards.map(c=>cardHTML(c,{extra:'trade-peek'})).join('');
   const p=myPlayer();
