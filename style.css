@@ -807,8 +807,11 @@ h1 .sub {
   /* 上段（相手） */
   #top-zone { gap: 6px; padding: 2px 2px 0; }
 
-  /* 中段: 縦積みに変更 */
+  /* 中段: 縦積み、相手ゾーンをセンターより先に表示 */
   #middle-zone { flex-direction: column; gap: 4px; }
+  #left-zone   { order: 1; }
+  #right-zone  { order: 2; }
+  #center-zone { order: 3; }
 
   /* 左右ゾーンを横並びに */
   #left-zone, #right-zone {
@@ -836,6 +839,11 @@ h1 .sub {
   .opp-name { font-size: 0.7rem; }
   .opp-sum  { font-size: 0.62rem; }
   .opp-chips { line-height: 1.4; margin-bottom: 2px; }
+
+  /* 相手手札: 開示→非開示を横1行に */
+  .opp-hand { display: flex; flex-direction: row; gap: 2px; justify-content: center; flex-wrap: wrap; }
+  .opp-hand .hand-row { display: contents; }
+  .opp-hand .hand-row.rev-row { border: none; padding: 0; }
 
   /* センターゾーン */
   #center-zone { padding: 8px 8px; gap: 4px; }

@@ -1114,8 +1114,10 @@ function oppBoxHTML(p,active,pos){
   const rev=p.hand.filter(c=>c.revealed);
   const nrH=nonRev.map(c=>cardHTML(c,{sm:true,back:true})).join('');
   const rH=rev.map(c=>cardHTML(c,{sm:true})).join('');
-  const cards=`<div class="hand-row rev-row">${rH}</div>
-    <div class="hand-row">${nrH}</div>`;
+  const cards=`<div class="opp-hand">
+    <div class="hand-row rev-row">${rH}</div>
+    <div class="hand-row">${nrH}</div>
+  </div>`;
   const chipsDisp=p.chips!==undefined?`<div class="opp-chips">${chipDisp(p.chips)}</div>`:'';
   const logDisp=chipLogDisp(p);
   const isFolded=G.bettingState&&G.bettingState.foldedIdx.includes(p.id);
