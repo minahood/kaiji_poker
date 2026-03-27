@@ -198,6 +198,7 @@ h1 .sub {
 #player-chip-log { text-align: center; margin-top: 4px; }
 .chip-log-wrap { display: inline-flex; align-items: center; gap: 2px; cursor: default; }
 .chip-log-label { font-size: 0.62rem; color: var(--text-dim); margin-right: 3px; letter-spacing: 0.05em; }
+.chip-log-count { font-size: 0.82rem; font-weight: 700; color: var(--gold); margin-left: 1px; }
 #chip-tooltip {
   display: none;
   position: absolute;
@@ -1055,7 +1056,7 @@ function chipLogDisp(p){
   const total=p.chipLog.reduce((s,e)=>s+e.amount,0);
   if(total===0)return '';
   const logLines=p.chipLog.map(e=>`${e.desc}: ${e.amount}チップ`).join('&#10;');
-  return`<div class="chip-log-wrap" onmouseenter="showChipTip(event,'${logLines}')" onmouseleave="hideChipTip()"><span class="chip-log-label">消費</span>${chipDisp(total)}</div>`;
+  return`<div class="chip-log-wrap" onmouseenter="showChipTip(event,'${logLines}')" onmouseleave="hideChipTip()"><span class="chip-log-label">消費</span><img src="${CHIPS_URL}" class="chip-img" alt="チップ"><span class="chip-log-count">×${total}</span></div>`;
 }
 
 function showChipTip(e,html){
@@ -1275,12 +1276,11 @@ function selectTrade(){
   const opponents=orderedOpponents();
   const autoTarget=opponents.length===1?opponents[0].id:null;
   G.tradeState={targetIdx:autoTarget,offerIdx:[]};
-  G.phase=autoTarget!==null?'human-trade-pick':'human-trade-target';
+  G.phase='human-trade-select';
   render();
 }
 function pickTradeTarget(pid){
   G.tradeState.targetIdx=pid;
-  G.phase='human-trade-pick';
   render();
 }
 function cancelTrade(){
@@ -1883,10 +1883,10 @@ function oppBoxHTML(p,active,pos){
     <div class="hand-row">${nrH}</div>`;
   const chipsDisp=p.chips!==undefined?`<div class="opp-chips">${chipDisp(p.chips)}</div>`:'';
   const logDisp=chipLogDisp(p);
-  const isTgt=G.phase==='human-trade-target';
-  const isSelected=G.phase==='human-trade-pick'&&G.tradeState&&G.tradeState.targetIdx===p.id;
-  const clickAttr=isTgt?` onclick="pickTradeTarget(${p.id})" style="cursor:pointer"`:'';
-  const extraCls=(isTgt?' trade-selectable':'')+(isSelected?' trade-selected':'');
+  const isTrade=G.phase==='human-trade-select';
+  const isSelected=isTrade&&G.tradeState&&G.tradeState.targetIdx===p.id;
+  const clickAttr=isTrade?` onclick="pickTradeTarget(${p.id})" style="cursor:pointer"`:'';
+  const extraCls=(isTrade&&!isSelected?' trade-selectable':'')+(isSelected?' trade-selected':'');
   return`<div class="opp-box pos-${pos}${active?' active':''}${extraCls}"${clickAttr}>
     <div class="opp-name">${p.name}</div>
     <div class="opp-sum">${revSum(p)}</div>
@@ -1926,7 +1926,7 @@ function renderPlayer(){
   const isRevPhase=G.phase==='reveal';
   const isDrawPhase=G.phase==='human-draw';
   const isDraw2Phase=G.phase==='human-draw2';
-  const isTradePickPhase=G.phase==='human-trade-pick';
+  const isTradePickPhase=G.phase==='human-trade-select';
   let row1='',row2='';
   if(isRevPhase){
     p.hand.forEach((c,i)=>{
@@ -2007,14 +2007,17 @@ function renderActions(){
   }else if(G.phase==='human-draw'){
     h=`<span style="color:#8a7a6a;font-size:.9rem;letter-spacing:.05em">捨てるカードをクリック（開示：無料 / 非開示：1チップ）</span>
     <button class="btn btn-cancel" onclick="cancelDraw()">キャンセル</button>`;
-  }else if(G.phase==='human-trade-target'){
-    h=`<span style="color:#c9a84c;font-size:.9rem">交換する相手のエリアをクリックして選択してください</span>
-    <button class="btn btn-cancel" onclick="cancelTrade()">キャンセル</button>`;
-  }else if(G.phase==='human-trade-pick'){
-    const n=G.tradeState?G.tradeState.offerIdx.length:0;
-    const tname=G.tradeState&&G.tradeState.targetIdx!==null?G.players[G.tradeState.targetIdx].name:'';
-    h=`<span style="color:#8a7a6a;font-size:.9rem">【${tname}】に提示するカードを選択（${n}枚）</span>
-    <button class="btn btn-ok" onclick="proposeToAI()" ${n>0?'':'disabled'}>提案する</button>
+  }else if(G.phase==='human-trade-select'){
+    const ts=G.tradeState||{targetIdx:null,offerIdx:[]};
+    const n=ts.offerIdx.length;
+    const tname=ts.targetIdx!==null?G.players[ts.targetIdx].name:null;
+    const ready=tname&&n>0;
+    const hint=!tname&&n===0?'相手エリアをクリック、または提示するカードを選択してください'
+      :!tname?`カード${n}枚選択中 ─ 相手エリアをクリックして提案`
+      :n===0?`【${tname}】を選択 ─ 提示するカードを選んでください`
+      :`【${tname}】に${n}枚提示`;
+    h=`<span style="color:#c9a84c;font-size:.88rem">${hint}</span>
+    <button class="btn btn-ok" onclick="proposeToAI()" ${ready?'':'disabled'}>提案する</button>
     <button class="btn btn-cancel" onclick="cancelTrade()">キャンセル</button>`;
   }else if(G.phase==='human-trade'){
     const ts=G.tradeState;

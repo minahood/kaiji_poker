@@ -188,6 +188,7 @@ h1 .sub {
 #player-chip-log { text-align: center; margin-top: 4px; }
 .chip-log-wrap { display: inline-flex; align-items: center; gap: 2px; cursor: default; }
 .chip-log-label { font-size: 0.62rem; color: var(--text-dim); margin-right: 3px; letter-spacing: 0.05em; }
+.chip-log-count { font-size: 0.82rem; font-weight: 700; color: var(--gold); margin-left: 1px; }
 #chip-tooltip {
   display: none;
   position: absolute;
