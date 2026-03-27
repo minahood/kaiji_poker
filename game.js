@@ -1003,11 +1003,21 @@ function processBetAction(pi,action,amount=0){
 
 function aiBettingTurn(pi){
   const bs=G.bettingState;
-  if(bs.currentBet===0){processBetAction(pi,'check');}
-  else if((G.players[pi].chips||0)<=0){processBetAction(pi,'fold');}
-  else{
-    const handRank=evalHand(G.players[pi].hand).rank;
+  const p=G.players[pi];
+  const handRank=evalHand(p.hand).rank;
+  const active=bs.order.filter(i=>!bs.foldedIdx.includes(i));
+  const others=active.filter(i=>i!==pi);
+  const maxOther=others.length>0?Math.max(...others.map(i=>(G.players[i].chips||0))):0;
+  const maxRaise=Math.min(p.chips||0,maxOther);
+  const raiseAmt=Math.max(1,Math.floor(maxRaise*0.5));
+  if(bs.currentBet===0){
+    if(handRank>=2&&maxRaise>0){processBetAction(pi,'raise',raiseAmt);}
+    else{processBetAction(pi,'check');}
+  }else if((p.chips||0)<=0){
+    processBetAction(pi,'fold');
+  }else{
     if(handRank<2&&Math.random()<0.8){processBetAction(pi,'fold');}
+    else if(handRank>=2&&Math.random()<0.6&&maxRaise>0){processBetAction(pi,'raise',raiseAmt);}
     else{processBetAction(pi,'call');}
   }
 }
