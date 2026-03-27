@@ -340,20 +340,30 @@ async function confirmReveal(){
       G.players.filter(p=>!p.isHuman).forEach(p=>aiReveal(p));
       const sorted=[...G.players].map((p,i)=>({p,i,s:revSum(p)})).sort((a,b)=>a.s-b.s||a.i-b.i);
       G.turnOrder=sorted.map(x=>x.i);
-      G.phase='human-action';
-      const pi=curPlayerIdx();
-      G.msg=`【ラウンド1】${G.players[pi].name} のターンです`;
+      G.phase='reveal-show';
+      G.msg='全員が一斉に開示！';
+      await pushState();
+      render();
+      setTimeout(async()=>{
+        G.phase='human-action';
+        const pi=curPlayerIdx();
+        G.msg=`【ラウンド1】${G.players[pi].name} のターンです`;
+        await pushState();
+        render();
+      },1200);
     }else{
       G.msg='他のプレイヤーの開示を待っています...';
+      await pushState();
+      render();
     }
-    await pushState();
-    render();
   }else{
     G.players.filter(p=>!p.isHuman).forEach(p=>aiReveal(p));
     const sorted=[...G.players].map((p,i)=>({p,i,s:revSum(p)})).sort((a,b)=>a.s-b.s||a.i-b.i);
     G.turnOrder=sorted.map(x=>x.i);
-    G.phase='turn-start';
-    nextTurn();
+    G.phase='reveal-show';
+    G.msg='全員が一斉に開示！';
+    render();
+    setTimeout(()=>{G.phase='turn-start';nextTurn();},1200);
   }
 }
 
@@ -1181,12 +1191,9 @@ function renderPlayer(){
   let row1='',row2='';
   if(isRevPhase){
     p.hand.forEach((c,i)=>{
-      const sel=G.selCards.includes(i);
-      const h=cardHTML(c,{click:true,sel,fn:'clickReveal',idx:i});
-      if(sel)row2+=h;else row1+=h;
+      row1+=cardHTML(c,{click:true,sel:G.selCards.includes(i),fn:'clickReveal',idx:i});
     });
     document.getElementById('player-hand').innerHTML=
-      `<div class="hand-row rev-row">${row2}</div>`+
       `<div class="hand-row">${row1}</div>`;
   }else if(isTradePickPhase){
     const ts=G.tradeState||{offerIdx:[]};
@@ -1225,8 +1232,10 @@ function renderActions(){
       h=`<span style="color:var(--text-dim)">他のプレイヤーの開示を待っています...</span>`;
     }else{
       const n=G.selCards.length;
-      h=`<button class="btn btn-ok" onclick="confirmReveal()" ${n!==2?'disabled':''}>${n}/2枚選択 → 開示確定</button>`;
+      h=`<button class="btn btn-ok" onclick="confirmReveal()" ${n!==2?'disabled':''}>${n}/2枚選択 → 全員同時に開示</button>`;
     }
+  }else if(G.phase==='reveal-show'){
+    h=`<span style="color:var(--gold);font-weight:bold">全員が一斉に開示！</span>`;
   }else if(G.phase==='human-action'){
     if(G.online&&!isMyTurn()){
       h=`<span style="color:var(--text-dim)">相手のターンを待っています...</span>`;
