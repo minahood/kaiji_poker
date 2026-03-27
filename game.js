@@ -956,6 +956,19 @@ function bettingRaise(){
   const amt=parseInt(document.getElementById('raise-input')?.value)||1;
   processBetAction(myIdx,'raise',amt);
 }
+function raiseDecrement(){
+  const el=document.getElementById('raise-input');
+  if(!el)return;
+  const v=parseInt(el.value)||1;
+  if(v>1)el.value=v-1;
+}
+function raiseIncrement(){
+  const el=document.getElementById('raise-input');
+  if(!el)return;
+  const max=parseInt(el.max)||99;
+  const v=parseInt(el.value)||1;
+  if(v<max)el.value=v+1;
+}
 
 function processBetAction(pi,action,amount=0){
   const bs=G.bettingState;
@@ -1243,7 +1256,9 @@ function renderActions(){
         ?`<button class="btn btn-ok" onclick="bettingCheck()">チェック</button>`
         :`<button class="btn btn-ok" onclick="bettingCall()" ${(p.chips||0)>0?'':'disabled'}>コール (${Math.min(bs.currentBet,(p.chips||0))}チップ)</button>`}
       <div class="raise-ctrl">
-        <input id="raise-input" type="number" class="raise-amt" min="1" max="${maxRaise}" value="1">
+        <button class="btn raise-step" onclick="raiseDecrement()" ${maxRaise>0?'':'disabled'}>−</button>
+        <input id="raise-input" type="number" class="raise-amt" min="1" max="${maxRaise}" value="1" inputmode="none">
+        <button class="btn raise-step" onclick="raiseIncrement()" ${maxRaise>0?'':'disabled'}>＋</button>
         <button class="btn btn-raise" onclick="bettingRaise()" ${maxRaise>0?'':'disabled'}>レイズ</button>
       </div>`;
     }

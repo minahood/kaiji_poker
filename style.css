@@ -389,6 +389,12 @@ h1 .sub {
   gap: 6px;
   margin-top: 0;
 }
+.raise-step {
+  min-width: 32px;
+  padding: 8px 10px;
+  font-size: 1rem;
+  line-height: 1;
+}
 .raise-amt {
   width: 64px;
   background: transparent;
@@ -874,8 +880,9 @@ h1 .sub {
   /* アクションエリア */
   #action-area { gap: 7px; padding: 7px 4px; }
   .btn { font-size: 0.8rem; padding: 9px 14px; }
-  .raise-ctrl { gap: 5px; }
-  .raise-amt { width: 54px; font-size: 0.8rem; padding: 7px 6px; }
+  .raise-ctrl { gap: 5px; flex-wrap: wrap; }
+  .raise-amt { width: 48px; font-size: 0.9rem; padding: 9px 4px; text-align: center; }
+  .raise-step { min-width: 38px; padding: 9px 12px; font-size: 1.1rem; }
 
   /* チップ画像 */
   .chip-img { width: 16px; height: 16px; margin-right: 1px; }
