@@ -454,6 +454,7 @@ function selectTrade(){
 }
 function pickTradeTarget(pid){
   G.tradeState.targetIdx=pid;
+  if(G.tradeState.offerIdx.length>0){proposeToAI();return;}
   render();
 }
 function cancelTrade(){
@@ -1189,12 +1190,9 @@ function renderActions(){
     const n=ts.offerIdx.length;
     const tname=ts.targetIdx!==null?G.players[ts.targetIdx].name:null;
     const ready=tname&&n>0;
-    const hint=!tname&&n===0?'相手エリアをクリック、または提示するカードを選択してください'
-      :!tname?`カード${n}枚選択中 ─ 相手エリアをクリックして提案`
-      :n===0?`【${tname}】を選択 ─ 提示するカードを選んでください`
-      :`【${tname}】に${n}枚提示`;
+    const hint=n===0?'提示するカードを手札から選んでください'
+      :`カード${n}枚選択中 ─ 相手エリアをクリックして提案`;
     h=`<span style="color:#c9a84c;font-size:.88rem">${hint}</span>
-    <button class="btn btn-ok" onclick="proposeToAI()" ${ready?'':'disabled'}>提案する</button>
     <button class="btn btn-cancel" onclick="cancelTrade()">キャンセル</button>`;
   }else if(G.phase==='human-trade'){
     const ts=G.tradeState;
