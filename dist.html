@@ -1795,7 +1795,9 @@ function processBetAction(pi,action,amount=0){
     bs.calledIdx.push(pi);
   }else if(action==='raise'){
     const active=bs.order.filter(i=>!bs.foldedIdx.includes(i));
-    const maxRaise=Math.max(...active.map(i=>(G.players[i].chips||0)));
+    const others=active.filter(i=>i!==pi);
+    const maxOther=others.length>0?Math.max(...others.map(i=>(G.players[i].chips||0))):0;
+    const maxRaise=Math.min(p.chips||0,maxOther);
     const raise=Math.min(Math.max(1,amount),maxRaise);
     const pay=Math.min(raise,(p.chips||0));
     if(!p.chipLog)p.chipLog=[];p.chipLog.push({amount:pay,desc:`レイズ`});
@@ -1994,7 +1996,9 @@ function renderActions(){
     }else{
       const p=myPlayer();
       const active=bs.order.filter(i=>!bs.foldedIdx.includes(i));
-      const maxRaise=active.length>0?Math.max(...active.map(i=>(G.players[i].chips||0))):0;
+      const others=active.filter(i=>i!==myIdx);
+      const maxOther=others.length>0?Math.max(...others.map(i=>(G.players[i].chips||0))):0;
+      const maxRaise=Math.min(p.chips||0,maxOther);
       h=`<button class="btn btn-cancel" onclick="bettingFold()">フォールド</button>
       ${bs.currentBet===0
         ?`<button class="btn btn-ok" onclick="bettingCheck()">チェック</button>`
