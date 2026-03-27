@@ -554,8 +554,13 @@ function proposeToAI(){
     if(accept){
       ts.aiGive=aiPickGive(ai,ts.offerIdx.length);
       ts.phase='accepted';
-    }else{ts.phase='rejected';}
-    render();
+      render();
+      setTimeout(execTrade,1200);
+    }else{
+      ts.phase='rejected';
+      render();
+      setTimeout(tradeEnd,1200);
+    }
   },1400);
 }
 
@@ -1098,16 +1103,6 @@ function render(){
 function renderTradeStatus(){
   const ts=G.tradeState;
   const ph=G.phase;
-  if(ph==='human-trade-select'&&ts){
-    const n=(ts.offerIdx||[]).length;
-    const tname=ts.targetIdx!==null?G.players[ts.targetIdx].name:'(未選択)';
-    const cardsH=(ts.offerIdx||[]).map(i=>cardHTML(myPlayer().hand[i],{sm:true})).join('');
-    return`<div class="trade-status-box">
-      <div class="ts-title">交換準備中</div>
-      <div class="ts-row"><span class="ts-label">あなた</span><span class="ts-arrow">→</span><span class="ts-name">${tname}</span></div>
-      ${n>0?`<div class="ts-cards">${cardsH}</div>`:'<div class="ts-hint">手札からカードを選択してください</div>'}
-    </div>`;
-  }
   if((ph==='human-trade'||ph==='turn-end')&&ts&&ts.proposerIdx!==undefined){
     const proposer=G.players[ts.proposerIdx];
     const target=G.players[ts.targetIdx];
@@ -1118,8 +1113,7 @@ function renderTradeStatus(){
     if(ts.phase==='deciding')statusH=`<span class="ts-status ts-deciding">考えています…</span>`;
     else if(ts.phase==='accepted')statusH=`<span class="ts-status ts-ok">受諾</span>`;
     else if(ts.phase==='rejected')statusH=`<span class="ts-status ts-ng">拒否</span>`;
-    else if(ts.phase==='pending')statusH=`<span class="ts-status ts-deciding">提案中…</span>`;
-    else if(ts.phase==='incoming')statusH=`<span class="ts-status ts-deciding">提案中…</span>`;
+    else if(ts.phase==='pending'||ts.phase==='incoming')statusH=`<span class="ts-status ts-deciding">提案中…</span>`;
     return`<div class="trade-status-box">
       <div class="ts-title">交換提案</div>
       <div class="ts-row"><span class="ts-label">${proposer.name}</span><span class="ts-arrow">→</span><span class="ts-name">${target.name}</span>${statusH}</div>
@@ -1321,15 +1315,13 @@ function renderActions(){
       if(ts.phase==='deciding'){
         h=`<span style="color:var(--text-dim)">${G.players[ts.targetIdx].name} が考えています...</span>`;
       }else if(ts.phase==='rejected'){
-        h=`<span style="color:#e06060">${G.players[ts.targetIdx].name} に拒否されました。</span>
-        <button class="btn btn-ok" onclick="tradeEnd()">OK</button>`;
+        h=`<span style="color:#e06060;font-weight:700">${G.players[ts.targetIdx].name} に拒否されました。</span>`;
       }else if(ts.phase==='accepted'){
         const ai=G.players[ts.targetIdx];
-        const ch=ts.aiGive.map(i=>cardHTML(ai.hand[i])).join('');
+        const ch=ts.aiGive.map(i=>cardHTML(ai.hand[i],{sm:true})).join('');
         h=`<span style="color:#6abd6a;font-weight:700">${ai.name} が承諾！</span>
         <span style="font-size:.82rem;color:#8a7a6a">${ai.name} が渡すカード：</span>
-        <div class="mc trade-result-cards">${ch}</div>
-        <button class="btn btn-ok" onclick="execTrade()">交換する</button>`;
+        <div class="mc trade-result-cards">${ch}</div>`;
       }else{
         h=`<span style="color:var(--text-dim)">相手の応答を待っています...</span>`;
       }
