@@ -1219,8 +1219,22 @@ function cancelDraw(){G.selDiscard=[];G.phase='human-action';G.msg='あなたの
 // ===================== TRADE (human→AI) =====================
 function selectTrade(){
   G.phase='human-trade';
-  G.tradeState={phase:'pick',targetIdx:null,offerIdx:[]};
+  const me=myPlayer();
+  const opponents=orderedOpponents();
+  const autoTarget=opponents.length===1?opponents[0].id:null;
+  G.tradeState={phase:'pick',targetIdx:autoTarget,offerIdx:[]};
   openModal('カード交換の提案');renderModal();
+}
+function orderedOpponents(){
+  const me=myPlayer();
+  const myPos=G.turnOrder.indexOf(myIdx);
+  const result=[];
+  for(let i=1;i<G.turnOrder.length;i++){
+    const pi=G.turnOrder[(myPos+i)%G.turnOrder.length];
+    const p=G.players[pi];
+    if(G.online?p.id!==me.id:!p.isHuman)result.push(p);
+  }
+  return result;
 }
 
 function openModal(title){
@@ -1233,11 +1247,16 @@ function renderModal(){
   const ts=G.tradeState;if(!ts)return;
   const mb=document.getElementById('modal-body');
   if(ts.phase==='pick'){
-    let h=`<div class="ms"><label>交換する相手：</label><div>`;
-    G.players.filter(p=>G.online?p.id!==myPlayer().id:!p.isHuman).forEach(p=>{
-      h+=`<button class="tgt-btn${ts.targetIdx===p.id?' on':''}" onclick="pickTarget(${p.id})">${p.name}</button>`;
-    });
-    h+=`</div></div><div class="ms"><label>提示するカード（1枚以上）：</label><div class="incoming-hand" id="mc"></div></div>`;
+    const opps=orderedOpponents();
+    let h='';
+    if(opps.length>1){
+      h+=`<div class="ms"><label>交換する相手：</label><div>`;
+      opps.forEach(p=>{
+        h+=`<button class="tgt-btn${ts.targetIdx===p.id?' on':''}" onclick="pickTarget(${p.id})">${p.name}</button>`;
+      });
+      h+=`</div></div>`;
+    }
+    h+=`<div class="ms"><label>提示するカード（1枚以上）：</label><div class="incoming-hand" id="mc"></div></div>`;
     h+=`<div class="mb"><button class="btn btn-ok" id="prop-btn" onclick="proposeToAI()" ${(!ts.targetIdx&&ts.targetIdx!==0)||ts.offerIdx.length===0?'disabled':''}>提案する</button>
     <button class="btn btn-cancel" onclick="cancelModal()">キャンセル</button></div>`;
     mb.innerHTML=h;
