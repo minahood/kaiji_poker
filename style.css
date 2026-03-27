@@ -166,6 +166,12 @@ h1 .sub {
   font-weight: 700;
   letter-spacing: 0.08em;
 }
+.pot-count {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-bottom: 2px;
+}
 
 /* === PLAYER AREA === */
 #player-zone { display: flex; justify-content: center; padding: 0 4px; }

@@ -1043,7 +1043,7 @@ function render(){
     `ラウンド ${r}/2　│　${pn} のターン`;
   document.getElementById('deck-info').textContent=`山札: ${G.deck?G.deck.length:0}枚`;
   const potEl=document.getElementById('pot-info');
-  if(potEl)potEl.innerHTML=(G.pot||0)>0?`<span class="pot-label">ポット</span><br>${chipDisp(G.pot)}`:'';
+  if(potEl)potEl.innerHTML=(G.pot||0)>0?`<span class="pot-label">ポット</span><br><span class="pot-count">${G.pot}</span>${chipDisp(G.pot)}`:'';
 
   const rc=document.getElementById('room-ctrl');
   if(rc)rc.innerHTML=myIdx===0?`<button class="btn btn-disband" onclick="disbandRoom()">ルームを解散</button>`:'';
@@ -1064,7 +1064,7 @@ function oppBoxHTML(p,active,pos){
   const extraCls=(isTrade&&!isSelected?' trade-selectable':'')+(isSelected?' trade-selected':'');
   return`<div class="opp-box pos-${pos}${active?' active':''}${extraCls}"${clickAttr}>
     <div class="opp-name">${p.name}</div>
-    <div class="opp-sum">${revSum(p)}</div>
+    <div class="opp-sum">${p.chips!==undefined?p.chips+'チップ':''}</div>
     ${chipsDisp}
     ${logDisp}
     ${cards}
