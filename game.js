@@ -105,6 +105,7 @@ function showStartScreen(){
   });
   const ss=document.getElementById('start-screen');
   ss.style.display='flex';ss.style.flexDirection='column';
+  const t=document.getElementById('site-title');if(t)t.style.display='';
   if(supabaseClient)supabaseClient.removeAllChannels();
   G={};myIdx=0;
 }
@@ -114,6 +115,7 @@ function showWaitScreen(code){
   const ws=document.getElementById('wait-screen');
   ws.style.display='flex';ws.style.flexDirection='column';
   document.getElementById('wait-code').textContent=code;
+  const t=document.getElementById('site-title');if(t)t.style.display='none';
   updateWaitScreen();
 }
 
@@ -304,6 +306,7 @@ function startGame(n){
     const el=document.getElementById(id);if(el)el.style.display='none';
   });
   document.getElementById('game-board').style.display='flex';
+  const _t=document.getElementById('site-title');if(_t)_t.style.display='none';
   G.msg='あなたの手札から2枚クリックして開示するカードを選んでください';
   render();
 }
