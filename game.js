@@ -245,15 +245,16 @@ function showChipTip(e,html){
 function hideChipTip(){document.getElementById('chip-tooltip').style.display='none';}
 
 function cardHTML(c,opts={}){
-  if(!c||opts.back)return`<div class="card sm back ${opts.extra||''}"></div>`;
+  const hidx=opts.idx!==undefined?` data-hidx="${opts.idx}"`:''
+  const dpi=opts.pi!==undefined?` data-pi="${opts.pi}"`:''
+  if(!c||opts.back)return`<div class="card sm back ${opts.extra||''}"${hidx}${dpi}></div>`;
   const rev=c.revealed?' rev':'';
   const sel=opts.sel?' sel':'';
   const clk=opts.click?' click':'';
   const sz=opts.sm?' sm':'';
   const extra=opts.extra?` ${opts.extra}`:'';
   const fn=opts.fn?` onclick="${opts.fn}(${opts.idx})"`:''
-  const hidx=opts.idx!==undefined?` data-hidx="${opts.idx}"`:''
-  return`<div class="card${rev}${sel}${clk}${sz}${extra}"${fn}${hidx}>
+  return`<div class="card${rev}${sel}${clk}${sz}${extra}"${fn}${hidx}${dpi}>
     <img src="${cardImgURL(c.suit,c.value)}" class="card-img" alt="${VD[c.value]}${SYM[c.suit]}" draggable="false">
   </div>`;
 }
@@ -1060,7 +1061,40 @@ function aiBettingTurn(pi){
 
 function endBetting(){
   G.bettingState.phase='done';
-  doShowdown();
+  render();
+  flipBeforeShowdown(doShowdown);
+}
+
+function flipBeforeShowdown(cb){
+  const HALF=220, COL_GAP=380;
+  // Collect non-revealed cards per player (sorted by hand index = left-to-right)
+  const playerCards=G.players.map(p=>({
+    pi:p.id,
+    cards:p.hand.map((c,i)=>({c,i})).filter(x=>!x.c.revealed)
+  }));
+  const maxCols=Math.max(...playerCards.map(x=>x.cards.length),0);
+  if(maxCols===0){cb();return;}
+  for(let col=0;col<maxCols;col++){
+    const colDelay=col*COL_GAP;
+    playerCards.forEach(({pi,cards})=>{
+      if(col>=cards.length)return;
+      const{c,i:hidx}=cards[col];
+      setTimeout(()=>{
+        const el=document.querySelector(`[data-pi="${pi}"][data-hidx="${hidx}"]`);
+        if(!el)return;
+        el.classList.add('flipping');
+        setTimeout(()=>{
+          if(!el.isConnected)return;
+          el.classList.remove('back','flipping');
+          el.classList.add('rev');
+          el.innerHTML=`<img src="${cardImgURL(c.suit,c.value)}" class="card-img" alt="" draggable="false">`;
+          const p=G.players.find(p=>p.id===pi);
+          if(p)p.hand[hidx].revealed=true;
+        },HALF);
+      },colDelay);
+    });
+  }
+  setTimeout(cb, maxCols*COL_GAP+HALF*2+80);
 }
 
 // ===================== POSITION =====================
@@ -1164,9 +1198,9 @@ function renderBetLog(){
 }
 
 function oppBoxHTML(p,active,pos){
-  const nonRev=p.hand.filter(c=>!c.revealed);
+  const nonRevIdx=p.hand.map((c,i)=>({c,i})).filter(x=>!x.c.revealed);
   const rev=p.hand.filter(c=>c.revealed);
-  const nrH=nonRev.map(c=>cardHTML(c,{sm:true,back:true})).join('');
+  const nrH=nonRevIdx.map(x=>cardHTML(x.c,{sm:true,back:true,idx:x.i,pi:p.id})).join('');
   const rH=rev.map(c=>cardHTML(c,{sm:true})).join('');
   const cards=`<div class="opp-hand">
     <div class="hand-row rev-row">${rH}</div>
@@ -1240,9 +1274,9 @@ function renderPlayer(){
     const nonRev=p.hand.map((c,i)=>({c,i})).filter(x=>!x.c.revealed)
       .sort((a,b)=>a.c.value-b.c.value||SUIT_STR[b.c.suit]-SUIT_STR[a.c.suit]);
     const rev=p.hand.map((c,i)=>({c,i})).filter(x=>x.c.revealed);
-    nonRev.forEach(x=>{row1+=cardHTML(x.c,{click:isDrawPhase,fn:isDrawPhase?'clickDiscard':null,idx:x.i});});
+    nonRev.forEach(x=>{row1+=cardHTML(x.c,{click:isDrawPhase,fn:isDrawPhase?'clickDiscard':null,idx:x.i,pi:myIdx});});
     rev.forEach(x=>{
-      row2+=cardHTML(x.c,{click:isDrawPhase,sel:isDraw2Phase,fn:isDrawPhase?'clickDiscard':null,idx:x.i});
+      row2+=cardHTML(x.c,{click:isDrawPhase,sel:isDraw2Phase,fn:isDrawPhase?'clickDiscard':null,idx:x.i,pi:myIdx});
     });
     document.getElementById('player-hand').innerHTML=
       `<div class="hand-row rev-row">${row2}</div>`+

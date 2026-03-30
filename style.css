@@ -520,6 +520,17 @@ h1 .sub {
   display: block;
   pointer-events: none;
 }
+@keyframes card-flip {
+  0%   { transform: scaleX(1); }
+  40%  { transform: scaleX(0); }
+  60%  { transform: scaleX(0); }
+  100% { transform: scaleX(1); }
+}
+.card.flipping {
+  animation: card-flip 0.44s ease-in-out forwards;
+  transform-origin: center;
+}
+
 @keyframes dealIn {
   from { opacity: 0; transform: translateY(-30px) scale(0.92); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
