@@ -1067,8 +1067,12 @@ function endBetting(){
 
 function flipBeforeShowdown(cb){
   const HALF=220, COL_GAP=380;
-  // Collect non-revealed cards per player (sorted by hand index = left-to-right)
-  const playerCards=G.players.map(p=>({
+  const foldedIdx=G.bettingState?G.bettingState.foldedIdx:[];
+  const activePlayers=G.players.filter(p=>!foldedIdx.includes(p.id));
+  // 全員フォールドで一人勝ちの場合はめくらない
+  if(activePlayers.length<=1){cb();return;}
+  // フォールドしていないプレイヤーのみめくる
+  const playerCards=activePlayers.map(p=>({
     pi:p.id,
     cards:p.hand.map((c,i)=>({c,i})).filter(x=>!x.c.revealed)
   }));
