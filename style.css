@@ -725,6 +725,9 @@ h1 .sub {
   font-weight: 700;
   margin-bottom: 8px;
   letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .sdp-role {
   font-size: 0.82rem;
