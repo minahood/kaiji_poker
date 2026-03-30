@@ -452,6 +452,16 @@ h1 .sub {
   color: var(--gold-dim);
   font-weight: 400;
   margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+.sd-chip-plus {
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin: 0 2px;
 }
 
 .card.kicker {

@@ -865,6 +865,9 @@ function doShowdown(){
   const winners=res.filter(r=>cmpHands(r.e,top.e)===0);
   const potWon=G.pot||0;
   const share=Math.floor(potWon/winners.length);
+  // ショーダウン前のチップを記録
+  const chipsBefore={};
+  G.players.forEach(p=>{chipsBefore[p.id]=p.chips||0;});
   winners.forEach(w=>{w.p.chips=(w.p.chips||0)+share;});
   if(potWon%winners.length>0)winners[0].p.chips++;
   G.pot=0;
@@ -873,9 +876,13 @@ function doShowdown(){
   h+=`<div style="text-align:center;color:var(--gold-dim);font-size:0.85rem;margin-bottom:14px">ポット ${potWon}チップを獲得</div>`;
   res.forEach((r,idx)=>{
     const isW=winners.some(w=>w.p.id===r.p.id);
+    const gained=isW?(r.p.chips-(chipsBefore[r.p.id]||0)):0;
+    const chipsH=isW
+      ?`${chipDisp(chipsBefore[r.p.id])}<span class="sd-chip-plus">+</span>${chipDisp(gained)}`
+      :chipDisp(r.p.chips);
     let ch=sortedHandHTML(r.p.hand,r.e);
     h+=`<div class="sdp${isW?' win':''}" style="animation-delay:${idx*0.15}s">
-    <div class="sdp-name">${r.p.name}${isW?' ◆':''} <span class="sd-chips">${chipDisp(r.p.chips)}</span></div>
+    <div class="sdp-name">${r.p.name}${isW?' ◆':''} <span class="sd-chips">${chipsH}</span></div>
     <div class="mc">${ch}</div><div class="sdp-role">${r.e.name}</div></div>`;
   });
   if(!G.online){
