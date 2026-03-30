@@ -727,6 +727,7 @@ h1 .sub {
   letter-spacing: 0.08em;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
 }
 .sdp-role {
@@ -734,6 +735,7 @@ h1 .sub {
   color: var(--text-dim);
   margin-top: 6px;
   letter-spacing: 0.08em;
+  text-align: center;
 }
 
 /* ===================== ONLINE SCREENS ===================== */
